@@ -1,0 +1,720 @@
+<title>xG League Table</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f5f3ec;
+    --paper-raised: #ffffff;
+    --ink: #1b241f;
+    --ink-soft: #55635a;
+    --pitch: #1e5631;
+    --pitch-strong: #163f24;
+    --pitch-tint: #e4ede6;
+    --gold: #a9791f;
+    --gold-tint: #f3ead2;
+    --brick: #9a3324;
+    --brick-tint: #f4e3de;
+    --line: #ddd8c8;
+    --line-strong: #c7c1ae;
+    --focus: #2f6f8f;
+    --tier-easy-bg: #2f7d46;
+    --tier-easy-fg: #f5f3ec;
+    --tier-lightgreen-bg: #7fac5a;
+    --tier-lightgreen-fg: #16241a;
+    --tier-mid-bg: #c99a2e;
+    --tier-mid-fg: #2a1f05;
+    --tier-lightred-bg: #c97a54;
+    --tier-lightred-fg: #2a1206;
+    --tier-hard-bg: #a33b2c;
+    --tier-hard-fg: #f5f3ec;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #12160f;
+      --paper-raised: #191f16;
+      --ink: #e9ede4;
+      --ink-soft: #a3ab9c;
+      --pitch: #5fae7c;
+      --pitch-strong: #7ecb98;
+      --pitch-tint: #1c2a1f;
+      --gold: #d8b354;
+      --gold-tint: #2c2513;
+      --brick: #e08066;
+      --brick-tint: #2f1c17;
+      --line: #2c3327;
+      --line-strong: #3c4636;
+      --focus: #6fb8dd;
+      --tier-easy-bg: #356b45;
+      --tier-easy-fg: #eef6ef;
+      --tier-lightgreen-bg: #5c8a4f;
+      --tier-lightgreen-fg: #eef6ef;
+      --tier-mid-bg: #8a6a1f;
+      --tier-mid-fg: #fbf1d9;
+      --tier-lightred-bg: #96543c;
+      --tier-lightred-fg: #f7e6e0;
+      --tier-hard-bg: #7a3226;
+      --tier-hard-fg: #f7e6e0;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #12160f;
+    --paper-raised: #191f16;
+    --ink: #e9ede4;
+    --ink-soft: #a3ab9c;
+    --pitch: #5fae7c;
+    --pitch-strong: #7ecb98;
+    --pitch-tint: #1c2a1f;
+    --gold: #d8b354;
+    --gold-tint: #2c2513;
+    --brick: #e08066;
+    --brick-tint: #2f1c17;
+    --line: #2c3327;
+    --line-strong: #3c4636;
+    --focus: #6fb8dd;
+    --tier-easy-bg: #356b45;
+    --tier-easy-fg: #eef6ef;
+    --tier-lightgreen-bg: #5c8a4f;
+    --tier-lightgreen-fg: #eef6ef;
+    --tier-mid-bg: #8a6a1f;
+    --tier-mid-fg: #fbf1d9;
+    --tier-lightred-bg: #96543c;
+    --tier-lightred-fg: #f7e6e0;
+    --tier-hard-bg: #7a3226;
+    --tier-hard-fg: #f7e6e0;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Source Sans 3", system-ui, sans-serif;
+    padding: clamp(20px, 4vw, 56px);
+  }
+
+  .page { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+
+  header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 16px;
+  }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--pitch);
+    font-weight: 600;
+  }
+  h1 {
+    font-family: "Oswald", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.9rem, 4vw, 2.6rem);
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    margin: 0;
+    text-wrap: balance;
+    line-height: 1.05;
+  }
+  .subline {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    max-width: 62ch;
+  }
+  .subline code {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.85em;
+    background: var(--pitch-tint);
+    padding: 0.1em 0.4em;
+    border-radius: 3px;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 22px;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    background: var(--paper-raised);
+  }
+  table { width: 100%; border-collapse: collapse; min-width: 760px; }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    background: var(--pitch);
+    color: #f5f3ec;
+    font-family: "Oswald", sans-serif;
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: right;
+    padding: 12px 14px;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    border-bottom: 2px solid var(--pitch-strong);
+  }
+  thead th:first-child { text-align: left; }
+  thead th:hover { background: var(--pitch-strong); }
+  thead th .arrow { display: inline-block; width: 0.9em; opacity: 0.55; font-size: 0.85em; }
+  thead th[aria-sort="ascending"] .arrow,
+  thead th[aria-sort="descending"] .arrow { opacity: 1; color: var(--gold-tint); }
+  thead th:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+
+  tbody td {
+    padding: 10px 14px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.88rem;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--pitch-tint); }
+  tbody td:first-child {
+    text-align: left;
+    font-family: "Source Sans 3", sans-serif;
+    font-weight: 600;
+    font-size: 0.94rem;
+    color: var(--ink);
+  }
+  td.rank {
+    color: var(--ink-soft);
+    font-weight: 500;
+    width: 2.4em;
+  }
+  td.pos { color: var(--pitch-strong); font-weight: 600; }
+  td.neg { color: var(--brick); font-weight: 600; }
+  td.pts {
+    font-weight: 700;
+    color: var(--ink);
+    background: var(--gold-tint);
+  }
+  tbody tr:hover td.pts { background: var(--gold-tint); filter: brightness(0.96); }
+
+  footer {
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  footer a { color: var(--focus); }
+  .refresh-wrap { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #refresh-btn {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--pitch-strong);
+    background: var(--pitch-tint);
+    border: 1px solid var(--line-strong);
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  #refresh-btn:hover { background: var(--gold-tint); color: var(--ink); }
+  #refresh-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  #refresh-note {
+    max-width: 40ch;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+  }
+  #refresh-note code {
+    font-family: "IBM Plex Mono", monospace;
+    background: var(--pitch-tint);
+    padding: 0.05em 0.35em;
+    border-radius: 3px;
+  }
+
+  @media (max-width: 560px) {
+    thead th, tbody td { padding: 8px 10px; font-size: 0.8rem; }
+  }
+
+  section.block { display: flex; flex-direction: column; gap: 14px; }
+  .section-head { display: flex; flex-direction: column; gap: 4px; }
+  h2 {
+    font-family: "Oswald", sans-serif;
+    font-weight: 600;
+    font-size: 1.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin: 0;
+  }
+  .section-note { color: var(--ink-soft); font-size: 0.88rem; max-width: 68ch; }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 18px;
+    padding: 14px 16px;
+    background: var(--paper-raised);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+  }
+  .control { display: flex; flex-direction: column; gap: 4px; }
+  .control label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .control select {
+    font-family: "Source Sans 3", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    border-radius: 5px;
+    padding: 7px 10px;
+    min-width: 9em;
+  }
+  .control select:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+  /* home/away split table reuses .table-wrap/table; group header row */
+  .group-row th {
+    background: var(--pitch-strong);
+    font-size: 0.7rem;
+    padding: 6px 14px;
+    text-align: center !important;
+  }
+
+  /* fixture ticker */
+  #ticker-table { min-width: 720px; }
+  #ticker-table th.gw-col { text-align: center; min-width: 4.2em; }
+  #ticker-table td.team-col {
+    text-align: left;
+    font-family: "Source Sans 3", sans-serif;
+    font-weight: 600;
+    position: sticky;
+    left: 0;
+    background: var(--paper-raised);
+    z-index: 1;
+  }
+  #ticker-table td.fx-cell {
+    padding: 0;
+    text-align: center;
+    border-left: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .fx-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    padding: 8px 4px;
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 600;
+    font-size: 0.78rem;
+    min-height: 44px;
+  }
+  .fx-pill .venue { font-size: 0.62rem; opacity: 0.75; letter-spacing: 0.04em; }
+  .fx-pill.blank { color: var(--ink-soft); font-weight: 400; font-style: italic; font-size: 0.72rem; }
+  .fx-pill.tier-easy { background: var(--tier-easy-bg); color: var(--tier-easy-fg); }
+  .fx-pill.tier-lightgreen { background: var(--tier-lightgreen-bg); color: var(--tier-lightgreen-fg); }
+  .fx-pill.tier-mid { background: var(--tier-mid-bg); color: var(--tier-mid-fg); }
+  .fx-pill.tier-lightred { background: var(--tier-lightred-bg); color: var(--tier-lightred-fg); }
+  .fx-pill.tier-hard { background: var(--tier-hard-bg); color: var(--tier-hard-fg); }
+  .fx-double { display: flex; flex-direction: column; }
+  .fx-double .fx-pill { min-height: 22px; }
+</style>
+
+<div class="page">
+  <header>
+    <span class="eyebrow">Premier League &middot; 2026/27 &middot; after Gameweek 2</span>
+    <h1>xG League Table</h1>
+    <p class="subline">
+      Actual results next to underlying quality. <code>xG</code> is expected
+      goals scored, <code>xGC</code> is expected goals conceded &mdash; both
+      season-to-date. Click any column heading to sort.
+    </p>
+  </header>
+
+  <div class="legend">
+    <span><span class="swatch" style="background:var(--gold-tint)"></span>Points</span>
+    <span><span class="swatch" style="background:var(--pitch-strong)"></span>Ahead of underlying numbers (xGD)</span>
+    <span><span class="swatch" style="background:var(--brick)"></span>Behind underlying numbers (xGD)</span>
+  </div>
+
+  <div class="table-wrap">
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th data-key="team" data-type="string" aria-sort="none">Team<span class="arrow">&#8645;</span></th>
+          <th data-key="played" data-type="number" aria-sort="none">P<span class="arrow">&#8645;</span></th>
+          <th data-key="GF" data-type="number" aria-sort="none">GF<span class="arrow">&#8645;</span></th>
+          <th data-key="GA" data-type="number" aria-sort="none">GA<span class="arrow">&#8645;</span></th>
+          <th data-key="GD" data-type="number" aria-sort="none">GD<span class="arrow">&#8645;</span></th>
+          <th data-key="xG" data-type="number" aria-sort="none">xG<span class="arrow">&#8645;</span></th>
+          <th data-key="xGC" data-type="number" aria-sort="none">xGC<span class="arrow">&#8645;</span></th>
+          <th data-key="xGD" data-type="number" aria-sort="none">xGD<span class="arrow">&#8645;</span></th>
+          <th data-key="Pts" data-type="number" aria-sort="descending">Pts<span class="arrow">&#8645;</span></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <section class="block">
+    <div class="section-head">
+      <h2>Home / Away Split</h2>
+      <p class="section-note">
+        Same underlying numbers, separated by venue &mdash; a team's home form
+        can look nothing like its away form. Click a heading to sort.
+      </p>
+    </div>
+    <div class="table-wrap">
+      <table id="split-tbl">
+        <thead>
+          <tr class="group-row">
+            <th></th>
+            <th></th>
+            <th colspan="3">Home</th>
+            <th colspan="3">Away</th>
+          </tr>
+          <tr>
+            <th data-key="team" data-type="string" aria-sort="none">Team<span class="arrow">&#8645;</span></th>
+            <th data-key="homeG" data-type="number" aria-sort="none">G<span class="arrow">&#8645;</span></th>
+            <th data-key="homeXG" data-type="number" aria-sort="none">xG<span class="arrow">&#8645;</span></th>
+            <th data-key="homeXGC" data-type="number" aria-sort="none">xGC<span class="arrow">&#8645;</span></th>
+            <th data-key="homeXGD" data-type="number" aria-sort="none">xGD<span class="arrow">&#8645;</span></th>
+            <th data-key="awayG" data-type="number" aria-sort="none">G<span class="arrow">&#8645;</span></th>
+            <th data-key="awayXG" data-type="number" aria-sort="none">xG<span class="arrow">&#8645;</span></th>
+            <th data-key="awayXGC" data-type="number" aria-sort="none">xGC<span class="arrow">&#8645;</span></th>
+            <th data-key="awayXGD" data-type="number" aria-sort="none">xGD<span class="arrow">&#8645;</span></th>
+          </tr>
+        </thead>
+        <tbody id="split-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="section-head">
+      <h2>Fixture Ticker</h2>
+      <p class="section-note">
+        Each cell is colored by how leaky that opponent's defense is <em>at
+        that venue</em> &mdash; ranked against the other 19 teams and split into
+        bands, green (easiest) through red (hardest). A row that opens green
+        has the easiest run of fixtures.
+      </p>
+    </div>
+    <div class="legend" id="tier-legend"></div>
+    <div class="controls">
+      <div class="control">
+        <label for="ctl-start">From gameweek</label>
+        <select id="ctl-start"></select>
+      </div>
+      <div class="control">
+        <label for="ctl-span">Gameweeks shown</label>
+        <select id="ctl-span">
+          <option value="3">3</option>
+          <option value="5" selected>5</option>
+          <option value="8">8</option>
+          <option value="10">10</option>
+        </select>
+      </div>
+      <div class="control">
+        <label for="ctl-bands">Bands</label>
+        <select id="ctl-bands">
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5" selected>5</option>
+        </select>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="ticker-table">
+        <thead><tr id="ticker-head"></tr></thead>
+        <tbody id="ticker-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <span>Source: Understat (xG, xGC) &middot; goals and points computed from Understat match results, cross-checked against the FPL API.</span>
+    <span class="refresh-wrap">
+      <span id="asof"></span>
+      <button id="refresh-btn" type="button">&#8635; Refresh data</button>
+      <span id="refresh-note" hidden>
+        A published page can't fetch live data itself &mdash; ask Claude to
+        refresh this dashboard, or run <code>python -m fpl_predictor refresh</code>
+        in the project folder, then re-publish.
+      </span>
+    </span>
+  </footer>
+</div>
+
+<script>
+  const DATA = [
+    {"team":"Chelsea","played":2,"GF":7,"GA":5,"GD":2,"xG":6.41,"xGC":3.21,"Pts":6},
+    {"team":"Arsenal","played":2,"GF":4,"GA":0,"GD":4,"xG":3.38,"xGC":0.84,"Pts":6},
+    {"team":"Manchester City","played":2,"GF":6,"GA":2,"GD":4,"xG":5.04,"xGC":1.63,"Pts":6},
+    {"team":"Hull","played":2,"GF":3,"GA":0,"GD":3,"xG":1.96,"xGC":2.96,"Pts":6},
+    {"team":"Everton","played":2,"GF":3,"GA":1,"GD":2,"xG":3.11,"xGC":4.49,"Pts":4},
+    {"team":"Newcastle United","played":2,"GF":4,"GA":2,"GD":2,"xG":2.6,"xGC":4.25,"Pts":4},
+    {"team":"Brentford","played":2,"GF":4,"GA":1,"GD":3,"xG":5.65,"xGC":1.91,"Pts":4},
+    {"team":"Leeds","played":2,"GF":2,"GA":1,"GD":1,"xG":1.62,"xGC":2.27,"Pts":4},
+    {"team":"Sunderland","played":2,"GF":2,"GA":2,"GD":0,"xG":2.74,"xGC":2.61,"Pts":3},
+    {"team":"Manchester United","played":2,"GF":5,"GA":4,"GD":1,"xG":6.64,"xGC":3.3,"Pts":3},
+    {"team":"Brighton","played":2,"GF":7,"GA":4,"GD":3,"xG":5.79,"xGC":4.1,"Pts":3},
+    {"team":"Ipswich","played":2,"GF":4,"GA":6,"GD":-2,"xG":3.39,"xGC":6.04,"Pts":3},
+    {"team":"Liverpool","played":2,"GF":4,"GA":4,"GD":0,"xG":4.41,"xGC":4.47,"Pts":2},
+    {"team":"Bournemouth","played":2,"GF":2,"GA":3,"GD":-1,"xG":2.97,"xGC":4.14,"Pts":1},
+    {"team":"Nottingham Forest","played":2,"GF":2,"GA":3,"GD":-1,"xG":3.54,"xGC":1.75,"Pts":1},
+    {"team":"Aston Villa","played":2,"GF":0,"GA":5,"GD":-5,"xG":0.56,"xGC":5.53,"Pts":0},
+    {"team":"Crystal Palace","played":2,"GF":1,"GA":6,"GD":-5,"xG":3.16,"xGC":4.02,"Pts":0},
+    {"team":"Tottenham","played":2,"GF":0,"GA":5,"GD":-5,"xG":1.88,"xGC":5.05,"Pts":0},
+    {"team":"Fulham","played":2,"GF":2,"GA":4,"GD":-2,"xG":2.44,"xGC":4.15,"Pts":0},
+    {"team":"Coventry","played":2,"GF":0,"GA":4,"GD":-4,"xG":1.74,"xGC":2.31,"Pts":0}
+  ].map(r => ({...r, xGD: Math.round((r.xG - r.xGC) * 100) / 100}));
+
+  const tbody = document.getElementById("tbody");
+  const headers = [...document.querySelectorAll("#tbl thead th")];
+  let sortKey = "Pts", sortDir = "descending";
+
+  function fmt(v) {
+    return typeof v === "number" && !Number.isInteger(v) ? v.toFixed(2) : v;
+  }
+
+  function cellClass(key, val) {
+    if (key === "Pts") return "pts";
+    if ((key === "GD" || key === "xGD") && val > 0) return "pos";
+    if ((key === "GD" || key === "xGD") && val < 0) return "neg";
+    return "";
+  }
+
+  function render() {
+    const rows = [...DATA].sort((a, b) => {
+      const av = a[sortKey], bv = b[sortKey];
+      let cmp = typeof av === "string" ? av.localeCompare(bv) : av - bv;
+      return sortDir === "ascending" ? cmp : -cmp;
+    });
+    tbody.innerHTML = rows.map((r, i) => `
+      <tr>
+        <td>${r.team}</td>
+        <td>${r.played}</td>
+        <td>${r.GF}</td>
+        <td>${r.GA}</td>
+        <td class="${cellClass('GD', r.GD)}">${r.GD > 0 ? '+' + r.GD : r.GD}</td>
+        <td>${fmt(r.xG)}</td>
+        <td>${fmt(r.xGC)}</td>
+        <td class="${cellClass('xGD', r.xGD)}">${r.xGD > 0 ? '+' + fmt(r.xGD) : fmt(r.xGD)}</td>
+        <td class="pts">${r.Pts}</td>
+      </tr>
+    `).join("");
+  }
+
+  headers.forEach(th => {
+    th.tabIndex = 0;
+    const activate = () => {
+      const key = th.dataset.key;
+      if (sortKey === key) {
+        sortDir = sortDir === "descending" ? "ascending" : "descending";
+      } else {
+        sortKey = key;
+        sortDir = th.dataset.type === "string" ? "ascending" : "descending";
+      }
+      headers.forEach(h => h.setAttribute("aria-sort", h === th ? sortDir : "none"));
+      render();
+    };
+    th.addEventListener("click", activate);
+    th.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activate(); }
+    });
+  });
+
+  document.getElementById("asof").textContent =
+    "Generated " + new Date().toISOString().slice(0, 10);
+
+  document.getElementById("refresh-btn").addEventListener("click", () => {
+    document.getElementById("refresh-note").hidden = false;
+  });
+
+  render();
+
+  // ---------------------------------------------------------------------
+  // Home / Away split table
+  // ---------------------------------------------------------------------
+  const HOME_AWAY_RAW = [{"team": "Arsenal", "short": "ARS", "homeG": 1, "homeXG": 1.85, "homeXGC": 0.56, "awayG": 1, "awayXG": 1.52, "awayXGC": 0.28}, {"team": "Aston Villa", "short": "AVL", "homeG": 1, "homeXG": 0.28, "homeXGC": 1.52, "awayG": 1, "awayXG": 0.28, "awayXGC": 4.0}, {"team": "Brighton", "short": "BHA", "homeG": 1, "homeXG": 4.0, "homeXGC": 0.28, "awayG": 1, "awayXG": 1.79, "awayXGC": 3.83}, {"team": "Bournemouth", "short": "BOU", "homeG": 1, "homeXG": 2.26, "homeXGC": 1.66, "awayG": 1, "awayXG": 0.71, "awayXGC": 2.47}, {"team": "Brentford", "short": "BRE", "homeG": 1, "homeXG": 4.04, "homeXGC": 0.76, "awayG": 1, "awayXG": 1.61, "awayXGC": 1.15}, {"team": "Chelsea", "short": "CHE", "homeG": 1, "homeXG": 3.83, "homeXGC": 1.79, "awayG": 1, "awayXG": 2.58, "awayXGC": 1.42}, {"team": "Coventry City", "short": "COV", "homeG": 1, "homeXG": 1.18, "homeXGC": 0.46, "awayG": 1, "awayXG": 0.56, "awayXGC": 1.85}, {"team": "Crystal Palace", "short": "CRY", "homeG": 1, "homeXG": 0.93, "homeXGC": 2.57, "awayG": 1, "awayXG": 2.23, "awayXGC": 1.45}, {"team": "Everton", "short": "EVE", "homeG": 1, "homeXG": 1.45, "homeXGC": 2.23, "awayG": 1, "awayXG": 1.66, "awayXGC": 2.26}, {"team": "Fulham", "short": "FUL", "homeG": 1, "homeXG": 1.42, "homeXGC": 2.58, "awayG": 1, "awayXG": 1.02, "awayXGC": 1.56}, {"team": "Hull City", "short": "HUL", "homeG": 1, "homeXG": 1.5, "homeXGC": 1.78, "awayG": 1, "awayXG": 0.46, "awayXGC": 1.18}, {"team": "Ipswich Town", "short": "IPS", "homeG": 1, "homeXG": 1.58, "homeXGC": 1.18, "awayG": 1, "awayXG": 1.81, "awayXGC": 4.87}, {"team": "Leeds", "short": "LEE", "homeG": 1, "homeXG": 1.15, "homeXGC": 1.61, "awayG": 1, "awayXG": 0.47, "awayXGC": 0.66}, {"team": "Liverpool", "short": "LIV", "homeG": 1, "homeXG": 1.28, "homeXGC": 2.88, "awayG": 1, "awayXG": 3.13, "awayXGC": 1.59}, {"team": "Man City", "short": "MCI", "homeG": 1, "homeXG": 2.47, "homeXGC": 0.71, "awayG": 1, "awayXG": 2.57, "awayXGC": 0.93}, {"team": "Man Utd", "short": "MUN", "homeG": 1, "homeXG": 4.87, "homeXGC": 1.81, "awayG": 1, "awayXG": 1.78, "awayXGC": 1.5}, {"team": "Newcastle", "short": "NEW", "homeG": 1, "homeXG": 1.59, "homeXGC": 3.13, "awayG": 1, "awayXG": 1.01, "awayXGC": 1.12}, {"team": "Nott'm Forest", "short": "NFO", "homeG": 1, "homeXG": 0.66, "homeXGC": 0.47, "awayG": 1, "awayXG": 2.88, "awayXGC": 1.28}, {"team": "Sunderland", "short": "SUN", "homeG": 1, "homeXG": 1.56, "homeXGC": 1.02, "awayG": 1, "awayXG": 1.18, "awayXGC": 1.58}, {"team": "Spurs", "short": "TOT", "homeG": 1, "homeXG": 1.12, "homeXGC": 1.01, "awayG": 1, "awayXG": 0.76, "awayXGC": 4.04}];
+
+  const HOME_AWAY = HOME_AWAY_RAW.map(r => ({
+    ...r,
+    homeXGD: Math.round((r.homeXG - r.homeXGC) * 100) / 100,
+    awayXGD: Math.round((r.awayXG - r.awayXGC) * 100) / 100,
+  }));
+
+  const splitTbody = document.getElementById("split-tbody");
+  const splitHeaders = [...document.querySelectorAll("#split-tbl thead tr:last-child th")];
+  let splitKey = "team", splitDir = "ascending";
+
+  function splitCellClass(key, val) {
+    if (key.endsWith("XGD")) return val > 0 ? "pos" : val < 0 ? "neg" : "";
+    return "";
+  }
+
+  function renderSplit() {
+    const rows = [...HOME_AWAY].sort((a, b) => {
+      const av = a[splitKey], bv = b[splitKey];
+      const cmp = typeof av === "string" ? av.localeCompare(bv) : av - bv;
+      return splitDir === "ascending" ? cmp : -cmp;
+    });
+    splitTbody.innerHTML = rows.map(r => `
+      <tr>
+        <td>${r.team}</td>
+        <td>${r.homeG}</td>
+        <td>${fmt(r.homeXG)}</td>
+        <td>${fmt(r.homeXGC)}</td>
+        <td class="${splitCellClass('homeXGD', r.homeXGD)}">${r.homeXGD > 0 ? '+' + fmt(r.homeXGD) : fmt(r.homeXGD)}</td>
+        <td>${r.awayG}</td>
+        <td>${fmt(r.awayXG)}</td>
+        <td>${fmt(r.awayXGC)}</td>
+        <td class="${splitCellClass('awayXGD', r.awayXGD)}">${r.awayXGD > 0 ? '+' + fmt(r.awayXGD) : fmt(r.awayXGD)}</td>
+      </tr>
+    `).join("");
+  }
+
+  splitHeaders.forEach(th => {
+    if (!th.dataset.key) return;
+    th.tabIndex = 0;
+    const activate = () => {
+      const key = th.dataset.key;
+      if (splitKey === key) {
+        splitDir = splitDir === "descending" ? "ascending" : "descending";
+      } else {
+        splitKey = key;
+        splitDir = th.dataset.type === "string" ? "ascending" : "descending";
+      }
+      splitHeaders.forEach(h => h.setAttribute("aria-sort", h === th ? splitDir : "none"));
+      renderSplit();
+    };
+    th.addEventListener("click", activate);
+    th.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activate(); }
+    });
+  });
+
+  renderSplit();
+
+  // ---------------------------------------------------------------------
+  // Fixture ticker
+  // ---------------------------------------------------------------------
+  const FIXTURES_BY_TEAM = {"ARS": [{"gw": 3, "opp": "CHE", "venue": "H"}, {"gw": 4, "opp": "SUN", "venue": "A"}, {"gw": 5, "opp": "BHA", "venue": "A"}, {"gw": 6, "opp": "LEE", "venue": "H"}, {"gw": 7, "opp": "NFO", "venue": "A"}, {"gw": 8, "opp": "EVE", "venue": "H"}, {"gw": 9, "opp": "LIV", "venue": "A"}, {"gw": 10, "opp": "HUL", "venue": "H"}, {"gw": 11, "opp": "NEW", "venue": "A"}, {"gw": 12, "opp": "MCI", "venue": "H"}, {"gw": 13, "opp": "BRE", "venue": "A"}, {"gw": 14, "opp": "TOT", "venue": "A"}, {"gw": 15, "opp": "BOU", "venue": "H"}, {"gw": 16, "opp": "MUN", "venue": "H"}, {"gw": 17, "opp": "CRY", "venue": "A"}, {"gw": 18, "opp": "FUL", "venue": "A"}, {"gw": 19, "opp": "IPS", "venue": "H"}, {"gw": 20, "opp": "BRE", "venue": "H"}, {"gw": 21, "opp": "HUL", "venue": "A"}, {"gw": 22, "opp": "NEW", "venue": "H"}, {"gw": 23, "opp": "MCI", "venue": "A"}, {"gw": 24, "opp": "LIV", "venue": "H"}, {"gw": 25, "opp": "IPS", "venue": "A"}, {"gw": 26, "opp": "FUL", "venue": "H"}, {"gw": 27, "opp": "MUN", "venue": "A"}, {"gw": 28, "opp": "CRY", "venue": "H"}, {"gw": 29, "opp": "CHE", "venue": "A"}, {"gw": 30, "opp": "SUN", "venue": "H"}, {"gw": 31, "opp": "COV", "venue": "A"}, {"gw": 32, "opp": "AVL", "venue": "H"}, {"gw": 33, "opp": "BOU", "venue": "A"}, {"gw": 34, "opp": "TOT", "venue": "H"}, {"gw": 35, "opp": "LEE", "venue": "A"}, {"gw": 36, "opp": "NFO", "venue": "H"}, {"gw": 37, "opp": "EVE", "venue": "A"}, {"gw": 38, "opp": "BHA", "venue": "H"}], "AVL": [{"gw": 3, "opp": "HUL", "venue": "A"}, {"gw": 4, "opp": "NFO", "venue": "H"}, {"gw": 5, "opp": "TOT", "venue": "A"}, {"gw": 6, "opp": "BRE", "venue": "H"}, {"gw": 7, "opp": "NEW", "venue": "A"}, {"gw": 8, "opp": "MCI", "venue": "H"}, {"gw": 9, "opp": "FUL", "venue": "H"}, {"gw": 10, "opp": "MUN", "venue": "A"}, {"gw": 11, "opp": "SUN", "venue": "H"}, {"gw": 12, "opp": "IPS", "venue": "A"}, {"gw": 13, "opp": "EVE", "venue": "H"}, {"gw": 14, "opp": "CRY", "venue": "H"}, {"gw": 15, "opp": "COV", "venue": "A"}, {"gw": 16, "opp": "CHE", "venue": "A"}, {"gw": 17, "opp": "LEE", "venue": "H"}, {"gw": 18, "opp": "LIV", "venue": "H"}, {"gw": 19, "opp": "BOU", "venue": "A"}, {"gw": 20, "opp": "EVE", "venue": "A"}, {"gw": 21, "opp": "MUN", "venue": "H"}, {"gw": 22, "opp": "FUL", "venue": "A"}, {"gw": 23, "opp": "IPS", "venue": "H"}, {"gw": 24, "opp": "SUN", "venue": "A"}, {"gw": 25, "opp": "BOU", "venue": "H"}, {"gw": 26, "opp": "LEE", "venue": "A"}, {"gw": 27, "opp": "CHE", "venue": "H"}, {"gw": 28, "opp": "LIV", "venue": "A"}, {"gw": 29, "opp": "HUL", "venue": "H"}, {"gw": 30, "opp": "NFO", "venue": "A"}, {"gw": 31, "opp": "BHA", "venue": "H"}, {"gw": 32, "opp": "ARS", "venue": "A"}, {"gw": 33, "opp": "COV", "venue": "H"}, {"gw": 34, "opp": "CRY", "venue": "A"}, {"gw": 35, "opp": "BRE", "venue": "A"}, {"gw": 36, "opp": "NEW", "venue": "H"}, {"gw": 37, "opp": "MCI", "venue": "A"}, {"gw": 38, "opp": "TOT", "venue": "H"}], "BOU": [{"gw": 3, "opp": "NEW", "venue": "A"}, {"gw": 4, "opp": "BRE", "venue": "H"}, {"gw": 5, "opp": "LIV", "venue": "H"}, {"gw": 6, "opp": "CHE", "venue": "A"}, {"gw": 7, "opp": "SUN", "venue": "H"}, {"gw": 8, "opp": "MUN", "venue": "A"}, {"gw": 9, "opp": "LEE", "venue": "H"}, {"gw": 10, "opp": "IPS", "venue": "A"}, {"gw": 11, "opp": "NFO", "venue": "H"}, {"gw": 12, "opp": "FUL", "venue": "A"}, {"gw": 13, "opp": "BHA", "venue": "H"}, {"gw": 14, "opp": "HUL", "venue": "H"}, {"gw": 15, "opp": "ARS", "venue": "A"}, {"gw": 16, "opp": "COV", "venue": "H"}, {"gw": 17, "opp": "TOT", "venue": "A"}, {"gw": 18, "opp": "CRY", "venue": "A"}, {"gw": 19, "opp": "AVL", "venue": "H"}, {"gw": 20, "opp": "BHA", "venue": "A"}, {"gw": 21, "opp": "IPS", "venue": "H"}, {"gw": 22, "opp": "NFO", "venue": "A"}, {"gw": 23, "opp": "FUL", "venue": "H"}, {"gw": 24, "opp": "LEE", "venue": "A"}, {"gw": 25, "opp": "AVL", "venue": "A"}, {"gw": 26, "opp": "CRY", "venue": "H"}, {"gw": 27, "opp": "COV", "venue": "A"}, {"gw": 28, "opp": "TOT", "venue": "H"}, {"gw": 29, "opp": "NEW", "venue": "H"}, {"gw": 30, "opp": "BRE", "venue": "A"}, {"gw": 31, "opp": "MCI", "venue": "H"}, {"gw": 32, "opp": "EVE", "venue": "A"}, {"gw": 33, "opp": "ARS", "venue": "H"}, {"gw": 34, "opp": "HUL", "venue": "A"}, {"gw": 35, "opp": "MUN", "venue": "H"}, {"gw": 36, "opp": "SUN", "venue": "A"}, {"gw": 37, "opp": "CHE", "venue": "H"}, {"gw": 38, "opp": "LIV", "venue": "A"}], "BRE": [{"gw": 3, "opp": "SUN", "venue": "H"}, {"gw": 4, "opp": "BOU", "venue": "A"}, {"gw": 5, "opp": "CHE", "venue": "H"}, {"gw": 6, "opp": "AVL", "venue": "A"}, {"gw": 7, "opp": "LIV", "venue": "H"}, {"gw": 8, "opp": "HUL", "venue": "A"}, {"gw": 9, "opp": "NFO", "venue": "H"}, {"gw": 10, "opp": "BHA", "venue": "A"}, {"gw": 11, "opp": "EVE", "venue": "H"}, {"gw": 12, "opp": "MUN", "venue": "A"}, {"gw": 13, "opp": "ARS", "venue": "H"}, {"gw": 14, "opp": "MCI", "venue": "H"}, {"gw": 15, "opp": "FUL", "venue": "A"}, {"gw": 16, "opp": "NEW", "venue": "H"}, {"gw": 17, "opp": "IPS", "venue": "A"}, {"gw": 18, "opp": "COV", "venue": "A"}, {"gw": 19, "opp": "CRY", "venue": "H"}, {"gw": 20, "opp": "ARS", "venue": "A"}, {"gw": 21, "opp": "BHA", "venue": "H"}, {"gw": 22, "opp": "EVE", "venue": "A"}, {"gw": 23, "opp": "MUN", "venue": "H"}, {"gw": 24, "opp": "NFO", "venue": "A"}, {"gw": 25, "opp": "CRY", "venue": "A"}, {"gw": 26, "opp": "COV", "venue": "H"}, {"gw": 27, "opp": "NEW", "venue": "A"}, {"gw": 28, "opp": "IPS", "venue": "H"}, {"gw": 29, "opp": "SUN", "venue": "A"}, {"gw": 30, "opp": "BOU", "venue": "H"}, {"gw": 31, "opp": "TOT", "venue": "A"}, {"gw": 32, "opp": "LEE", "venue": "H"}, {"gw": 33, "opp": "FUL", "venue": "H"}, {"gw": 34, "opp": "MCI", "venue": "A"}, {"gw": 35, "opp": "AVL", "venue": "H"}, {"gw": 36, "opp": "LIV", "venue": "A"}, {"gw": 37, "opp": "HUL", "venue": "H"}, {"gw": 38, "opp": "CHE", "venue": "A"}], "BHA": [{"gw": 3, "opp": "LEE", "venue": "H"}, {"gw": 4, "opp": "COV", "venue": "A"}, {"gw": 5, "opp": "ARS", "venue": "H"}, {"gw": 6, "opp": "SUN", "venue": "A"}, {"gw": 7, "opp": "CRY", "venue": "H"}, {"gw": 8, "opp": "LIV", "venue": "A"}, {"gw": 9, "opp": "MCI", "venue": "A"}, {"gw": 10, "opp": "BRE", "venue": "H"}, {"gw": 11, "opp": "HUL", "venue": "A"}, {"gw": 12, "opp": "NEW", "venue": "H"}, {"gw": 13, "opp": "BOU", "venue": "A"}, {"gw": 14, "opp": "NFO", "venue": "A"}, {"gw": 15, "opp": "EVE", "venue": "H"}, {"gw": 16, "opp": "IPS", "venue": "H"}, {"gw": 17, "opp": "FUL", "venue": "A"}, {"gw": 18, "opp": "TOT", "venue": "A"}, {"gw": 19, "opp": "MUN", "venue": "H"}, {"gw": 20, "opp": "BOU", "venue": "H"}, {"gw": 21, "opp": "BRE", "venue": "A"}, {"gw": 22, "opp": "MCI", "venue": "H"}, {"gw": 23, "opp": "NEW", "venue": "A"}, {"gw": 24, "opp": "HUL", "venue": "H"}, {"gw": 25, "opp": "MUN", "venue": "A"}, {"gw": 26, "opp": "TOT", "venue": "H"}, {"gw": 27, "opp": "IPS", "venue": "A"}, {"gw": 28, "opp": "FUL", "venue": "H"}, {"gw": 29, "opp": "LEE", "venue": "A"}, {"gw": 30, "opp": "COV", "venue": "H"}, {"gw": 31, "opp": "AVL", "venue": "A"}, {"gw": 32, "opp": "CHE", "venue": "H"}, {"gw": 33, "opp": "EVE", "venue": "A"}, {"gw": 34, "opp": "NFO", "venue": "H"}, {"gw": 35, "opp": "SUN", "venue": "H"}, {"gw": 36, "opp": "CRY", "venue": "A"}, {"gw": 37, "opp": "LIV", "venue": "H"}, {"gw": 38, "opp": "ARS", "venue": "A"}], "CHE": [{"gw": 3, "opp": "ARS", "venue": "A"}, {"gw": 4, "opp": "HUL", "venue": "H"}, {"gw": 5, "opp": "BRE", "venue": "A"}, {"gw": 6, "opp": "BOU", "venue": "H"}, {"gw": 7, "opp": "EVE", "venue": "A"}, {"gw": 8, "opp": "TOT", "venue": "H"}, {"gw": 9, "opp": "MUN", "venue": "H"}, {"gw": 10, "opp": "SUN", "venue": "A"}, {"gw": 11, "opp": "LEE", "venue": "H"}, {"gw": 12, "opp": "NFO", "venue": "A"}, {"gw": 13, "opp": "CRY", "venue": "H"}, {"gw": 14, "opp": "LIV", "venue": "H"}, {"gw": 15, "opp": "MCI", "venue": "A"}, {"gw": 16, "opp": "AVL", "venue": "H"}, {"gw": 17, "opp": "COV", "venue": "A"}, {"gw": 18, "opp": "IPS", "venue": "A"}, {"gw": 19, "opp": "NEW", "venue": "H"}, {"gw": 20, "opp": "CRY", "venue": "A"}, {"gw": 21, "opp": "SUN", "venue": "H"}, {"gw": 22, "opp": "LEE", "venue": "A"}, {"gw": 23, "opp": "NFO", "venue": "H"}, {"gw": 24, "opp": "MUN", "venue": "A"}, {"gw": 25, "opp": "NEW", "venue": "A"}, {"gw": 26, "opp": "IPS", "venue": "H"}, {"gw": 27, "opp": "AVL", "venue": "A"}, {"gw": 28, "opp": "COV", "venue": "H"}, {"gw": 29, "opp": "ARS", "venue": "H"}, {"gw": 30, "opp": "HUL", "venue": "A"}, {"gw": 31, "opp": "FUL", "venue": "H"}, {"gw": 32, "opp": "BHA", "venue": "A"}, {"gw": 33, "opp": "MCI", "venue": "H"}, {"gw": 34, "opp": "LIV", "venue": "A"}, {"gw": 35, "opp": "TOT", "venue": "A"}, {"gw": 36, "opp": "EVE", "venue": "H"}, {"gw": 37, "opp": "BOU", "venue": "A"}, {"gw": 38, "opp": "BRE", "venue": "H"}], "COV": [{"gw": 3, "opp": "MCI", "venue": "A"}, {"gw": 4, "opp": "BHA", "venue": "H"}, {"gw": 5, "opp": "NFO", "venue": "A"}, {"gw": 6, "opp": "NEW", "venue": "H"}, {"gw": 7, "opp": "TOT", "venue": "A"}, {"gw": 8, "opp": "FUL", "venue": "H"}, {"gw": 9, "opp": "SUN", "venue": "H"}, {"gw": 10, "opp": "EVE", "venue": "A"}, {"gw": 11, "opp": "CRY", "venue": "H"}, {"gw": 12, "opp": "LEE", "venue": "A"}, {"gw": 13, "opp": "IPS", "venue": "H"}, {"gw": 14, "opp": "MUN", "venue": "A"}, {"gw": 15, "opp": "AVL", "venue": "H"}, {"gw": 16, "opp": "BOU", "venue": "A"}, {"gw": 17, "opp": "CHE", "venue": "H"}, {"gw": 18, "opp": "BRE", "venue": "H"}, {"gw": 19, "opp": "LIV", "venue": "A"}, {"gw": 20, "opp": "IPS", "venue": "A"}, {"gw": 21, "opp": "EVE", "venue": "H"}, {"gw": 22, "opp": "SUN", "venue": "A"}, {"gw": 23, "opp": "LEE", "venue": "H"}, {"gw": 24, "opp": "CRY", "venue": "A"}, {"gw": 25, "opp": "LIV", "venue": "H"}, {"gw": 26, "opp": "BRE", "venue": "A"}, {"gw": 27, "opp": "BOU", "venue": "H"}, {"gw": 28, "opp": "CHE", "venue": "A"}, {"gw": 29, "opp": "MCI", "venue": "H"}, {"gw": 30, "opp": "BHA", "venue": "A"}, {"gw": 31, "opp": "ARS", "venue": "H"}, {"gw": 32, "opp": "HUL", "venue": "A"}, {"gw": 33, "opp": "AVL", "venue": "A"}, {"gw": 34, "opp": "MUN", "venue": "H"}, {"gw": 35, "opp": "NEW", "venue": "A"}, {"gw": 36, "opp": "TOT", "venue": "H"}, {"gw": 37, "opp": "FUL", "venue": "A"}, {"gw": 38, "opp": "NFO", "venue": "H"}], "CRY": [{"gw": 3, "opp": "FUL", "venue": "A"}, {"gw": 4, "opp": "IPS", "venue": "H"}, {"gw": 5, "opp": "LEE", "venue": "A"}, {"gw": 6, "opp": "NFO", "venue": "H"}, {"gw": 7, "opp": "BHA", "venue": "A"}, {"gw": 8, "opp": "NEW", "venue": "H"}, {"gw": 9, "opp": "TOT", "venue": "A"}, {"gw": 10, "opp": "LIV", "venue": "H"}, {"gw": 11, "opp": "COV", "venue": "A"}, {"gw": 12, "opp": "HUL", "venue": "H"}, {"gw": 13, "opp": "CHE", "venue": "A"}, {"gw": 14, "opp": "AVL", "venue": "A"}, {"gw": 15, "opp": "MUN", "venue": "H"}, {"gw": 16, "opp": "SUN", "venue": "A"}, {"gw": 17, "opp": "ARS", "venue": "H"}, {"gw": 18, "opp": "BOU", "venue": "H"}, {"gw": 19, "opp": "BRE", "venue": "A"}, {"gw": 20, "opp": "CHE", "venue": "H"}, {"gw": 21, "opp": "LIV", "venue": "A"}, {"gw": 22, "opp": "TOT", "venue": "H"}, {"gw": 23, "opp": "HUL", "venue": "A"}, {"gw": 24, "opp": "COV", "venue": "H"}, {"gw": 25, "opp": "BRE", "venue": "H"}, {"gw": 26, "opp": "BOU", "venue": "A"}, {"gw": 27, "opp": "SUN", "venue": "H"}, {"gw": 28, "opp": "ARS", "venue": "A"}, {"gw": 29, "opp": "FUL", "venue": "H"}, {"gw": 30, "opp": "IPS", "venue": "A"}, {"gw": 31, "opp": "EVE", "venue": "H"}, {"gw": 32, "opp": "MCI", "venue": "A"}, {"gw": 33, "opp": "MUN", "venue": "A"}, {"gw": 34, "opp": "AVL", "venue": "H"}, {"gw": 35, "opp": "NFO", "venue": "A"}, {"gw": 36, "opp": "BHA", "venue": "H"}, {"gw": 37, "opp": "NEW", "venue": "A"}, {"gw": 38, "opp": "LEE", "venue": "H"}], "EVE": [{"gw": 3, "opp": "MUN", "venue": "H"}, {"gw": 4, "opp": "TOT", "venue": "A"}, {"gw": 5, "opp": "IPS", "venue": "H"}, {"gw": 6, "opp": "HUL", "venue": "A"}, {"gw": 7, "opp": "CHE", "venue": "H"}, {"gw": 8, "opp": "ARS", "venue": "A"}, {"gw": 9, "opp": "NEW", "venue": "A"}, {"gw": 10, "opp": "COV", "venue": "H"}, {"gw": 11, "opp": "BRE", "venue": "A"}, {"gw": 12, "opp": "LIV", "venue": "H"}, {"gw": 13, "opp": "AVL", "venue": "A"}, {"gw": 14, "opp": "FUL", "venue": "H"}, {"gw": 15, "opp": "BHA", "venue": "A"}, {"gw": 16, "opp": "NFO", "venue": "A"}, {"gw": 17, "opp": "SUN", "venue": "H"}, {"gw": 18, "opp": "MCI", "venue": "H"}, {"gw": 19, "opp": "LEE", "venue": "A"}, {"gw": 20, "opp": "AVL", "venue": "H"}, {"gw": 21, "opp": "COV", "venue": "A"}, {"gw": 22, "opp": "BRE", "venue": "H"}, {"gw": 23, "opp": "LIV", "venue": "A"}, {"gw": 24, "opp": "NEW", "venue": "H"}, {"gw": 25, "opp": "LEE", "venue": "H"}, {"gw": 26, "opp": "SUN", "venue": "A"}, {"gw": 27, "opp": "NFO", "venue": "H"}, {"gw": 28, "opp": "MCI", "venue": "A"}, {"gw": 29, "opp": "MUN", "venue": "A"}, {"gw": 30, "opp": "TOT", "venue": "H"}, {"gw": 31, "opp": "CRY", "venue": "A"}, {"gw": 32, "opp": "BOU", "venue": "H"}, {"gw": 33, "opp": "BHA", "venue": "H"}, {"gw": 34, "opp": "FUL", "venue": "A"}, {"gw": 35, "opp": "HUL", "venue": "H"}, {"gw": 36, "opp": "CHE", "venue": "A"}, {"gw": 37, "opp": "ARS", "venue": "H"}, {"gw": 38, "opp": "IPS", "venue": "A"}], "FUL": [{"gw": 3, "opp": "CRY", "venue": "H"}, {"gw": 4, "opp": "LIV", "venue": "A"}, {"gw": 5, "opp": "MUN", "venue": "H"}, {"gw": 6, "opp": "IPS", "venue": "A"}, {"gw": 7, "opp": "HUL", "venue": "H"}, {"gw": 8, "opp": "COV", "venue": "A"}, {"gw": 9, "opp": "AVL", "venue": "A"}, {"gw": 10, "opp": "NEW", "venue": "H"}, {"gw": 11, "opp": "MCI", "venue": "A"}, {"gw": 12, "opp": "BOU", "venue": "H"}, {"gw": 13, "opp": "TOT", "venue": "A"}, {"gw": 14, "opp": "EVE", "venue": "A"}, {"gw": 15, "opp": "BRE", "venue": "H"}, {"gw": 16, "opp": "LEE", "venue": "A"}, {"gw": 17, "opp": "BHA", "venue": "H"}, {"gw": 18, "opp": "ARS", "venue": "H"}, {"gw": 19, "opp": "NFO", "venue": "A"}, {"gw": 20, "opp": "TOT", "venue": "H"}, {"gw": 21, "opp": "NEW", "venue": "A"}, {"gw": 22, "opp": "AVL", "venue": "H"}, {"gw": 23, "opp": "BOU", "venue": "A"}, {"gw": 24, "opp": "MCI", "venue": "H"}, {"gw": 25, "opp": "NFO", "venue": "H"}, {"gw": 26, "opp": "ARS", "venue": "A"}, {"gw": 27, "opp": "LEE", "venue": "H"}, {"gw": 28, "opp": "BHA", "venue": "A"}, {"gw": 29, "opp": "CRY", "venue": "A"}, {"gw": 30, "opp": "LIV", "venue": "H"}, {"gw": 31, "opp": "CHE", "venue": "A"}, {"gw": 32, "opp": "SUN", "venue": "H"}, {"gw": 33, "opp": "BRE", "venue": "A"}, {"gw": 34, "opp": "EVE", "venue": "H"}, {"gw": 35, "opp": "IPS", "venue": "H"}, {"gw": 36, "opp": "HUL", "venue": "A"}, {"gw": 37, "opp": "COV", "venue": "H"}, {"gw": 38, "opp": "MUN", "venue": "A"}], "HUL": [{"gw": 3, "opp": "AVL", "venue": "H"}, {"gw": 4, "opp": "CHE", "venue": "A"}, {"gw": 5, "opp": "NEW", "venue": "A"}, {"gw": 6, "opp": "EVE", "venue": "H"}, {"gw": 7, "opp": "FUL", "venue": "A"}, {"gw": 8, "opp": "BRE", "venue": "H"}, {"gw": 9, "opp": "IPS", "venue": "H"}, {"gw": 10, "opp": "ARS", "venue": "A"}, {"gw": 11, "opp": "BHA", "venue": "H"}, {"gw": 12, "opp": "CRY", "venue": "A"}, {"gw": 13, "opp": "NFO", "venue": "H"}, {"gw": 14, "opp": "BOU", "venue": "A"}, {"gw": 15, "opp": "TOT", "venue": "H"}, {"gw": 16, "opp": "MCI", "venue": "A"}, {"gw": 17, "opp": "LIV", "venue": "H"}, {"gw": 18, "opp": "LEE", "venue": "H"}, {"gw": 19, "opp": "SUN", "venue": "A"}, {"gw": 20, "opp": "NFO", "venue": "A"}, {"gw": 21, "opp": "ARS", "venue": "H"}, {"gw": 22, "opp": "IPS", "venue": "A"}, {"gw": 23, "opp": "CRY", "venue": "H"}, {"gw": 24, "opp": "BHA", "venue": "A"}, {"gw": 25, "opp": "SUN", "venue": "H"}, {"gw": 26, "opp": "LIV", "venue": "A"}, {"gw": 27, "opp": "MCI", "venue": "H"}, {"gw": 28, "opp": "LEE", "venue": "A"}, {"gw": 29, "opp": "AVL", "venue": "A"}, {"gw": 30, "opp": "CHE", "venue": "H"}, {"gw": 31, "opp": "MUN", "venue": "A"}, {"gw": 32, "opp": "COV", "venue": "H"}, {"gw": 33, "opp": "TOT", "venue": "A"}, {"gw": 34, "opp": "BOU", "venue": "H"}, {"gw": 35, "opp": "EVE", "venue": "A"}, {"gw": 36, "opp": "FUL", "venue": "H"}, {"gw": 37, "opp": "BRE", "venue": "A"}, {"gw": 38, "opp": "NEW", "venue": "H"}], "IPS": [{"gw": 3, "opp": "LIV", "venue": "H"}, {"gw": 4, "opp": "CRY", "venue": "A"}, {"gw": 5, "opp": "EVE", "venue": "A"}, {"gw": 6, "opp": "FUL", "venue": "H"}, {"gw": 7, "opp": "MCI", "venue": "A"}, {"gw": 8, "opp": "NFO", "venue": "H"}, {"gw": 9, "opp": "HUL", "venue": "A"}, {"gw": 10, "opp": "BOU", "venue": "H"}, {"gw": 11, "opp": "TOT", "venue": "A"}, {"gw": 12, "opp": "AVL", "venue": "H"}, {"gw": 13, "opp": "COV", "venue": "A"}, {"gw": 14, "opp": "LEE", "venue": "A"}, {"gw": 15, "opp": "NEW", "venue": "H"}, {"gw": 16, "opp": "BHA", "venue": "A"}, {"gw": 17, "opp": "BRE", "venue": "H"}, {"gw": 18, "opp": "CHE", "venue": "H"}, {"gw": 19, "opp": "ARS", "venue": "A"}, {"gw": 20, "opp": "COV", "venue": "H"}, {"gw": 21, "opp": "BOU", "venue": "A"}, {"gw": 22, "opp": "HUL", "venue": "H"}, {"gw": 23, "opp": "AVL", "venue": "A"}, {"gw": 24, "opp": "TOT", "venue": "H"}, {"gw": 25, "opp": "ARS", "venue": "H"}, {"gw": 26, "opp": "CHE", "venue": "A"}, {"gw": 27, "opp": "BHA", "venue": "H"}, {"gw": 28, "opp": "BRE", "venue": "A"}, {"gw": 29, "opp": "LIV", "venue": "A"}, {"gw": 30, "opp": "CRY", "venue": "H"}, {"gw": 31, "opp": "SUN", "venue": "A"}, {"gw": 32, "opp": "MUN", "venue": "H"}, {"gw": 33, "opp": "NEW", "venue": "A"}, {"gw": 34, "opp": "LEE", "venue": "H"}, {"gw": 35, "opp": "FUL", "venue": "A"}, {"gw": 36, "opp": "MCI", "venue": "H"}, {"gw": 37, "opp": "NFO", "venue": "A"}, {"gw": 38, "opp": "EVE", "venue": "H"}], "LEE": [{"gw": 3, "opp": "BHA", "venue": "A"}, {"gw": 4, "opp": "NEW", "venue": "H"}, {"gw": 5, "opp": "CRY", "venue": "H"}, {"gw": 6, "opp": "ARS", "venue": "A"}, {"gw": 7, "opp": "MUN", "venue": "H"}, {"gw": 8, "opp": "SUN", "venue": "A"}, {"gw": 9, "opp": "BOU", "venue": "A"}, {"gw": 10, "opp": "TOT", "venue": "H"}, {"gw": 11, "opp": "CHE", "venue": "A"}, {"gw": 12, "opp": "COV", "venue": "H"}, {"gw": 13, "opp": "MCI", "venue": "A"}, {"gw": 14, "opp": "IPS", "venue": "H"}, {"gw": 15, "opp": "LIV", "venue": "A"}, {"gw": 16, "opp": "FUL", "venue": "H"}, {"gw": 17, "opp": "AVL", "venue": "A"}, {"gw": 18, "opp": "HUL", "venue": "A"}, {"gw": 19, "opp": "EVE", "venue": "H"}, {"gw": 20, "opp": "MCI", "venue": "H"}, {"gw": 21, "opp": "TOT", "venue": "A"}, {"gw": 22, "opp": "CHE", "venue": "H"}, {"gw": 23, "opp": "COV", "venue": "A"}, {"gw": 24, "opp": "BOU", "venue": "H"}, {"gw": 25, "opp": "EVE", "venue": "A"}, {"gw": 26, "opp": "AVL", "venue": "H"}, {"gw": 27, "opp": "FUL", "venue": "A"}, {"gw": 28, "opp": "HUL", "venue": "H"}, {"gw": 29, "opp": "BHA", "venue": "H"}, {"gw": 30, "opp": "NEW", "venue": "A"}, {"gw": 31, "opp": "NFO", "venue": "H"}, {"gw": 32, "opp": "BRE", "venue": "A"}, {"gw": 33, "opp": "LIV", "venue": "H"}, {"gw": 34, "opp": "IPS", "venue": "A"}, {"gw": 35, "opp": "ARS", "venue": "H"}, {"gw": 36, "opp": "MUN", "venue": "A"}, {"gw": 37, "opp": "SUN", "venue": "H"}, {"gw": 38, "opp": "CRY", "venue": "A"}], "LIV": [{"gw": 3, "opp": "IPS", "venue": "A"}, {"gw": 4, "opp": "FUL", "venue": "H"}, {"gw": 5, "opp": "BOU", "venue": "A"}, {"gw": 6, "opp": "MCI", "venue": "H"}, {"gw": 7, "opp": "BRE", "venue": "A"}, {"gw": 8, "opp": "BHA", "venue": "H"}, {"gw": 9, "opp": "ARS", "venue": "H"}, {"gw": 10, "opp": "CRY", "venue": "A"}, {"gw": 11, "opp": "MUN", "venue": "H"}, {"gw": 12, "opp": "EVE", "venue": "A"}, {"gw": 13, "opp": "SUN", "venue": "H"}, {"gw": 14, "opp": "CHE", "venue": "A"}, {"gw": 15, "opp": "LEE", "venue": "H"}, {"gw": 16, "opp": "TOT", "venue": "H"}, {"gw": 17, "opp": "HUL", "venue": "A"}, {"gw": 18, "opp": "AVL", "venue": "A"}, {"gw": 19, "opp": "COV", "venue": "H"}, {"gw": 20, "opp": "SUN", "venue": "A"}, {"gw": 21, "opp": "CRY", "venue": "H"}, {"gw": 22, "opp": "MUN", "venue": "A"}, {"gw": 23, "opp": "EVE", "venue": "H"}, {"gw": 24, "opp": "ARS", "venue": "A"}, {"gw": 25, "opp": "COV", "venue": "A"}, {"gw": 26, "opp": "HUL", "venue": "H"}, {"gw": 27, "opp": "TOT", "venue": "A"}, {"gw": 28, "opp": "AVL", "venue": "H"}, {"gw": 29, "opp": "IPS", "venue": "H"}, {"gw": 30, "opp": "FUL", "venue": "A"}, {"gw": 31, "opp": "NEW", "venue": "H"}, {"gw": 32, "opp": "NFO", "venue": "A"}, {"gw": 33, "opp": "LEE", "venue": "A"}, {"gw": 34, "opp": "CHE", "venue": "H"}, {"gw": 35, "opp": "MCI", "venue": "A"}, {"gw": 36, "opp": "BRE", "venue": "H"}, {"gw": 37, "opp": "BHA", "venue": "A"}, {"gw": 38, "opp": "BOU", "venue": "H"}], "MCI": [{"gw": 3, "opp": "COV", "venue": "H"}, {"gw": 4, "opp": "MUN", "venue": "A"}, {"gw": 5, "opp": "SUN", "venue": "H"}, {"gw": 6, "opp": "LIV", "venue": "A"}, {"gw": 7, "opp": "IPS", "venue": "H"}, {"gw": 8, "opp": "AVL", "venue": "A"}, {"gw": 9, "opp": "BHA", "venue": "H"}, {"gw": 10, "opp": "NFO", "venue": "A"}, {"gw": 11, "opp": "FUL", "venue": "H"}, {"gw": 12, "opp": "ARS", "venue": "A"}, {"gw": 13, "opp": "LEE", "venue": "H"}, {"gw": 14, "opp": "BRE", "venue": "A"}, {"gw": 15, "opp": "CHE", "venue": "H"}, {"gw": 16, "opp": "HUL", "venue": "H"}, {"gw": 17, "opp": "NEW", "venue": "A"}, {"gw": 18, "opp": "EVE", "venue": "A"}, {"gw": 19, "opp": "TOT", "venue": "H"}, {"gw": 20, "opp": "LEE", "venue": "A"}, {"gw": 21, "opp": "NFO", "venue": "H"}, {"gw": 22, "opp": "BHA", "venue": "A"}, {"gw": 23, "opp": "ARS", "venue": "H"}, {"gw": 24, "opp": "FUL", "venue": "A"}, {"gw": 25, "opp": "TOT", "venue": "A"}, {"gw": 26, "opp": "NEW", "venue": "H"}, {"gw": 27, "opp": "HUL", "venue": "A"}, {"gw": 28, "opp": "EVE", "venue": "H"}, {"gw": 29, "opp": "COV", "venue": "A"}, {"gw": 30, "opp": "MUN", "venue": "H"}, {"gw": 31, "opp": "BOU", "venue": "A"}, {"gw": 32, "opp": "CRY", "venue": "H"}, {"gw": 33, "opp": "CHE", "venue": "A"}, {"gw": 34, "opp": "BRE", "venue": "H"}, {"gw": 35, "opp": "LIV", "venue": "H"}, {"gw": 36, "opp": "IPS", "venue": "A"}, {"gw": 37, "opp": "AVL", "venue": "H"}, {"gw": 38, "opp": "SUN", "venue": "A"}], "MUN": [{"gw": 3, "opp": "EVE", "venue": "A"}, {"gw": 4, "opp": "MCI", "venue": "H"}, {"gw": 5, "opp": "FUL", "venue": "A"}, {"gw": 6, "opp": "TOT", "venue": "H"}, {"gw": 7, "opp": "LEE", "venue": "A"}, {"gw": 8, "opp": "BOU", "venue": "H"}, {"gw": 9, "opp": "CHE", "venue": "A"}, {"gw": 10, "opp": "AVL", "venue": "H"}, {"gw": 11, "opp": "LIV", "venue": "A"}, {"gw": 12, "opp": "BRE", "venue": "H"}, {"gw": 13, "opp": "NEW", "venue": "A"}, {"gw": 14, "opp": "COV", "venue": "H"}, {"gw": 15, "opp": "CRY", "venue": "A"}, {"gw": 16, "opp": "ARS", "venue": "A"}, {"gw": 17, "opp": "NFO", "venue": "H"}, {"gw": 18, "opp": "SUN", "venue": "H"}, {"gw": 19, "opp": "BHA", "venue": "A"}, {"gw": 20, "opp": "NEW", "venue": "H"}, {"gw": 21, "opp": "AVL", "venue": "A"}, {"gw": 22, "opp": "LIV", "venue": "H"}, {"gw": 23, "opp": "BRE", "venue": "A"}, {"gw": 24, "opp": "CHE", "venue": "H"}, {"gw": 25, "opp": "BHA", "venue": "H"}, {"gw": 26, "opp": "NFO", "venue": "A"}, {"gw": 27, "opp": "ARS", "venue": "H"}, {"gw": 28, "opp": "SUN", "venue": "A"}, {"gw": 29, "opp": "EVE", "venue": "H"}, {"gw": 30, "opp": "MCI", "venue": "A"}, {"gw": 31, "opp": "HUL", "venue": "H"}, {"gw": 32, "opp": "IPS", "venue": "A"}, {"gw": 33, "opp": "CRY", "venue": "H"}, {"gw": 34, "opp": "COV", "venue": "A"}, {"gw": 35, "opp": "BOU", "venue": "A"}, {"gw": 36, "opp": "LEE", "venue": "H"}, {"gw": 37, "opp": "TOT", "venue": "A"}, {"gw": 38, "opp": "FUL", "venue": "H"}], "NEW": [{"gw": 3, "opp": "BOU", "venue": "H"}, {"gw": 4, "opp": "LEE", "venue": "A"}, {"gw": 5, "opp": "HUL", "venue": "H"}, {"gw": 6, "opp": "COV", "venue": "A"}, {"gw": 7, "opp": "AVL", "venue": "H"}, {"gw": 8, "opp": "CRY", "venue": "A"}, {"gw": 9, "opp": "EVE", "venue": "H"}, {"gw": 10, "opp": "FUL", "venue": "A"}, {"gw": 11, "opp": "ARS", "venue": "H"}, {"gw": 12, "opp": "BHA", "venue": "A"}, {"gw": 13, "opp": "MUN", "venue": "H"}, {"gw": 14, "opp": "SUN", "venue": "H"}, {"gw": 15, "opp": "IPS", "venue": "A"}, {"gw": 16, "opp": "BRE", "venue": "A"}, {"gw": 17, "opp": "MCI", "venue": "H"}, {"gw": 18, "opp": "NFO", "venue": "H"}, {"gw": 19, "opp": "CHE", "venue": "A"}, {"gw": 20, "opp": "MUN", "venue": "A"}, {"gw": 21, "opp": "FUL", "venue": "H"}, {"gw": 22, "opp": "ARS", "venue": "A"}, {"gw": 23, "opp": "BHA", "venue": "H"}, {"gw": 24, "opp": "EVE", "venue": "A"}, {"gw": 25, "opp": "CHE", "venue": "H"}, {"gw": 26, "opp": "MCI", "venue": "A"}, {"gw": 27, "opp": "BRE", "venue": "H"}, {"gw": 28, "opp": "NFO", "venue": "A"}, {"gw": 29, "opp": "BOU", "venue": "A"}, {"gw": 30, "opp": "LEE", "venue": "H"}, {"gw": 31, "opp": "LIV", "venue": "A"}, {"gw": 32, "opp": "TOT", "venue": "H"}, {"gw": 33, "opp": "IPS", "venue": "H"}, {"gw": 34, "opp": "SUN", "venue": "A"}, {"gw": 35, "opp": "COV", "venue": "H"}, {"gw": 36, "opp": "AVL", "venue": "A"}, {"gw": 37, "opp": "CRY", "venue": "H"}, {"gw": 38, "opp": "HUL", "venue": "A"}], "NFO": [{"gw": 3, "opp": "TOT", "venue": "H"}, {"gw": 4, "opp": "AVL", "venue": "A"}, {"gw": 5, "opp": "COV", "venue": "H"}, {"gw": 6, "opp": "CRY", "venue": "A"}, {"gw": 7, "opp": "ARS", "venue": "H"}, {"gw": 8, "opp": "IPS", "venue": "A"}, {"gw": 9, "opp": "BRE", "venue": "A"}, {"gw": 10, "opp": "MCI", "venue": "H"}, {"gw": 11, "opp": "BOU", "venue": "A"}, {"gw": 12, "opp": "CHE", "venue": "H"}, {"gw": 13, "opp": "HUL", "venue": "A"}, {"gw": 14, "opp": "BHA", "venue": "H"}, {"gw": 15, "opp": "SUN", "venue": "A"}, {"gw": 16, "opp": "EVE", "venue": "H"}, {"gw": 17, "opp": "MUN", "venue": "A"}, {"gw": 18, "opp": "NEW", "venue": "A"}, {"gw": 19, "opp": "FUL", "venue": "H"}, {"gw": 20, "opp": "HUL", "venue": "H"}, {"gw": 21, "opp": "MCI", "venue": "A"}, {"gw": 22, "opp": "BOU", "venue": "H"}, {"gw": 23, "opp": "CHE", "venue": "A"}, {"gw": 24, "opp": "BRE", "venue": "H"}, {"gw": 25, "opp": "FUL", "venue": "A"}, {"gw": 26, "opp": "MUN", "venue": "H"}, {"gw": 27, "opp": "EVE", "venue": "A"}, {"gw": 28, "opp": "NEW", "venue": "H"}, {"gw": 29, "opp": "TOT", "venue": "A"}, {"gw": 30, "opp": "AVL", "venue": "H"}, {"gw": 31, "opp": "LEE", "venue": "A"}, {"gw": 32, "opp": "LIV", "venue": "H"}, {"gw": 33, "opp": "SUN", "venue": "H"}, {"gw": 34, "opp": "BHA", "venue": "A"}, {"gw": 35, "opp": "CRY", "venue": "H"}, {"gw": 36, "opp": "ARS", "venue": "A"}, {"gw": 37, "opp": "IPS", "venue": "H"}, {"gw": 38, "opp": "COV", "venue": "A"}], "TOT": [{"gw": 3, "opp": "NFO", "venue": "A"}, {"gw": 4, "opp": "EVE", "venue": "H"}, {"gw": 5, "opp": "AVL", "venue": "H"}, {"gw": 6, "opp": "MUN", "venue": "A"}, {"gw": 7, "opp": "COV", "venue": "H"}, {"gw": 8, "opp": "CHE", "venue": "A"}, {"gw": 9, "opp": "CRY", "venue": "H"}, {"gw": 10, "opp": "LEE", "venue": "A"}, {"gw": 11, "opp": "IPS", "venue": "H"}, {"gw": 12, "opp": "SUN", "venue": "A"}, {"gw": 13, "opp": "FUL", "venue": "H"}, {"gw": 14, "opp": "ARS", "venue": "H"}, {"gw": 15, "opp": "HUL", "venue": "A"}, {"gw": 16, "opp": "LIV", "venue": "A"}, {"gw": 17, "opp": "BOU", "venue": "H"}, {"gw": 18, "opp": "BHA", "venue": "H"}, {"gw": 19, "opp": "MCI", "venue": "A"}, {"gw": 20, "opp": "FUL", "venue": "A"}, {"gw": 21, "opp": "LEE", "venue": "H"}, {"gw": 22, "opp": "CRY", "venue": "A"}, {"gw": 23, "opp": "SUN", "venue": "H"}, {"gw": 24, "opp": "IPS", "venue": "A"}, {"gw": 25, "opp": "MCI", "venue": "H"}, {"gw": 26, "opp": "BHA", "venue": "A"}, {"gw": 27, "opp": "LIV", "venue": "H"}, {"gw": 28, "opp": "BOU", "venue": "A"}, {"gw": 29, "opp": "NFO", "venue": "H"}, {"gw": 30, "opp": "EVE", "venue": "A"}, {"gw": 31, "opp": "BRE", "venue": "H"}, {"gw": 32, "opp": "NEW", "venue": "A"}, {"gw": 33, "opp": "HUL", "venue": "H"}, {"gw": 34, "opp": "ARS", "venue": "A"}, {"gw": 35, "opp": "CHE", "venue": "H"}, {"gw": 36, "opp": "COV", "venue": "A"}, {"gw": 37, "opp": "MUN", "venue": "H"}, {"gw": 38, "opp": "AVL", "venue": "A"}], "SUN": [{"gw": 3, "opp": "BRE", "venue": "A"}, {"gw": 4, "opp": "ARS", "venue": "H"}, {"gw": 5, "opp": "MCI", "venue": "A"}, {"gw": 6, "opp": "BHA", "venue": "H"}, {"gw": 7, "opp": "BOU", "venue": "A"}, {"gw": 8, "opp": "LEE", "venue": "H"}, {"gw": 9, "opp": "COV", "venue": "A"}, {"gw": 10, "opp": "CHE", "venue": "H"}, {"gw": 11, "opp": "AVL", "venue": "A"}, {"gw": 12, "opp": "TOT", "venue": "H"}, {"gw": 13, "opp": "LIV", "venue": "A"}, {"gw": 14, "opp": "NEW", "venue": "A"}, {"gw": 15, "opp": "NFO", "venue": "H"}, {"gw": 16, "opp": "CRY", "venue": "H"}, {"gw": 17, "opp": "EVE", "venue": "A"}, {"gw": 18, "opp": "MUN", "venue": "A"}, {"gw": 19, "opp": "HUL", "venue": "H"}, {"gw": 20, "opp": "LIV", "venue": "H"}, {"gw": 21, "opp": "CHE", "venue": "A"}, {"gw": 22, "opp": "COV", "venue": "H"}, {"gw": 23, "opp": "TOT", "venue": "A"}, {"gw": 24, "opp": "AVL", "venue": "H"}, {"gw": 25, "opp": "HUL", "venue": "A"}, {"gw": 26, "opp": "EVE", "venue": "H"}, {"gw": 27, "opp": "CRY", "venue": "A"}, {"gw": 28, "opp": "MUN", "venue": "H"}, {"gw": 29, "opp": "BRE", "venue": "H"}, {"gw": 30, "opp": "ARS", "venue": "A"}, {"gw": 31, "opp": "IPS", "venue": "H"}, {"gw": 32, "opp": "FUL", "venue": "A"}, {"gw": 33, "opp": "NFO", "venue": "A"}, {"gw": 34, "opp": "NEW", "venue": "H"}, {"gw": 35, "opp": "BHA", "venue": "A"}, {"gw": 36, "opp": "BOU", "venue": "H"}, {"gw": 37, "opp": "LEE", "venue": "A"}, {"gw": 38, "opp": "MCI", "venue": "H"}]};
+
+  const TEAM_SHORT_TO_FULL = Object.fromEntries(HOME_AWAY.map(r => [r.short, r.team]));
+  const XGC_BY_TEAM = Object.fromEntries(HOME_AWAY.map(r => [r.short, { home: r.homeXGC, away: r.awayXGC }]));
+  const ALL_SHORTS = Object.keys(FIXTURES_BY_TEAM).sort();
+  const ALL_GWS = [...new Set(Object.values(FIXTURES_BY_TEAM).flat().map(f => f.gw))].sort((a, b) => a - b);
+
+  // Teams are ranked and split into K equal-count groups; each group gets one
+  // of a small hand-picked set of colors (not a computed gradient) so K stays
+  // legible -- the same idea as FPL's own 5-step fixture difficulty coloring.
+  const PALETTES = {
+    3: [
+      { cls: "tier-easy", label: "Easiest" },
+      { cls: "tier-mid", label: "Middling" },
+      { cls: "tier-hard", label: "Hardest" },
+    ],
+    4: [
+      { cls: "tier-easy", label: "Easiest" },
+      { cls: "tier-lightgreen", label: "Easier" },
+      { cls: "tier-lightred", label: "Harder" },
+      { cls: "tier-hard", label: "Hardest" },
+    ],
+    5: [
+      { cls: "tier-easy", label: "Easiest" },
+      { cls: "tier-lightgreen", label: "Easier" },
+      { cls: "tier-mid", label: "Middling" },
+      { cls: "tier-lightred", label: "Harder" },
+      { cls: "tier-hard", label: "Hardest" },
+    ],
+  };
+
+  function computeBands(k) {
+    const palette = PALETTES[k];
+    const tierOf = (values) => {
+      const ranked = [...values].sort((a, b) => b.val - a.val); // highest xGC first = easiest
+      const n = ranked.length;
+      const out = {};
+      ranked.forEach((r, i) => {
+        const groupIdx = Math.min(k - 1, Math.floor((i * k) / n));
+        out[r.short] = palette[groupIdx].cls;
+      });
+      return out;
+    };
+    const homeBand = tierOf(ALL_SHORTS.map(s => ({ short: s, val: XGC_BY_TEAM[s].home })));
+    const awayBand = tierOf(ALL_SHORTS.map(s => ({ short: s, val: XGC_BY_TEAM[s].away })));
+    return { homeBand, awayBand };
+  }
+
+  function renderLegend(k) {
+    document.getElementById("tier-legend").innerHTML = PALETTES[k].map(t => `
+      <span><span class="swatch" style="background:var(--${t.cls}-bg)"></span>${t.label}</span>
+    `).join("");
+  }
+
+  const ctlStart = document.getElementById("ctl-start");
+  const ctlSpan = document.getElementById("ctl-span");
+  const ctlBands = document.getElementById("ctl-bands");
+  ALL_GWS.forEach(gw => {
+    const opt = document.createElement("option");
+    opt.value = gw; opt.textContent = "GW " + gw;
+    if (gw === ALL_GWS[0]) opt.selected = true;
+    ctlStart.appendChild(opt);
+  });
+
+  function renderTicker() {
+    const start = Number(ctlStart.value);
+    const span = Number(ctlSpan.value);
+    const k = Number(ctlBands.value);
+    const gws = ALL_GWS.filter(g => g >= start).slice(0, span);
+    const { homeBand, awayBand } = computeBands(k);
+    renderLegend(k);
+
+    document.getElementById("ticker-head").innerHTML =
+      `<th class="team-col" style="text-align:left">Team</th>` +
+      gws.map(g => `<th class="gw-col">GW ${g}</th>`).join("");
+
+    document.getElementById("ticker-tbody").innerHTML = ALL_SHORTS.map(short => {
+      const cells = gws.map(g => {
+        const fx = FIXTURES_BY_TEAM[short].filter(f => f.gw === g);
+        if (fx.length === 0) {
+          return `<td class="fx-cell"><div class="fx-pill blank">&mdash;</div></td>`;
+        }
+        const pills = fx.map(f => {
+          const oppIsHome = f.venue === "A"; // our team away -> opponent home
+          const tier = oppIsHome ? homeBand[f.opp] : awayBand[f.opp];
+          return `<div class="fx-pill ${tier}">
+                    <span>${f.opp}</span><span class="venue">${f.venue}</span>
+                  </div>`;
+        }).join("");
+        return `<td class="fx-cell"><div class="fx-double">${pills}</div></td>`;
+      }).join("");
+      return `<tr><td class="team-col">${TEAM_SHORT_TO_FULL[short]}</td>${cells}</tr>`;
+    }).join("");
+  }
+
+  [ctlStart, ctlSpan, ctlBands].forEach(el => el.addEventListener("change", renderTicker));
+  renderTicker();
+</script>
