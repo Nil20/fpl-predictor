@@ -300,9 +300,9 @@
   }
 
   /* fixture ticker */
-  #ticker-table { min-width: 720px; }
-  #ticker-table th.gw-col { text-align: center; min-width: 4.2em; }
-  #ticker-table td.team-col {
+  .ticker-table { min-width: 720px; }
+  .ticker-table th.gw-col { text-align: center; min-width: 4.2em; }
+  .ticker-table td.team-col {
     text-align: left;
     font-family: "Source Sans 3", sans-serif;
     font-weight: 600;
@@ -311,7 +311,7 @@
     background: var(--paper-raised);
     z-index: 1;
   }
-  #ticker-table td.fx-cell {
+  .ticker-table td.fx-cell {
     padding: 0;
     text-align: center;
     border-left: 1px solid var(--line);
@@ -420,23 +420,24 @@
 
   <section class="block">
     <div class="section-head">
-      <h2>Fixture Ticker</h2>
+      <h2>Attacking Fixture Ticker</h2>
       <p class="section-note">
-        Each cell is colored by how leaky that opponent's defense is <em>at
-        that venue</em> &mdash; ranked against the other 19 teams and split into
-        bands, green (easiest) through red (hardest). A row that opens green
-        has the easiest run of fixtures.
+        For picking attackers/midfielders. Each cell is colored by how leaky
+        that opponent's defense is <em>at that venue</em> (xGC per match)
+        &mdash; ranked against the other 19 teams and split into bands, green
+        (easiest) through red (hardest). A row that opens green has the
+        easiest run of fixtures to <strong>score against</strong>.
       </p>
     </div>
-    <div class="legend" id="tier-legend"></div>
+    <div class="legend" id="tier-legend-atk"></div>
     <div class="controls">
       <div class="control">
-        <label for="ctl-start">From gameweek</label>
-        <select id="ctl-start"></select>
+        <label for="ctl-start-atk">From gameweek</label>
+        <select id="ctl-start-atk"></select>
       </div>
       <div class="control">
-        <label for="ctl-span">Gameweeks shown</label>
-        <select id="ctl-span">
+        <label for="ctl-span-atk">Gameweeks shown</label>
+        <select id="ctl-span-atk">
           <option value="3">3</option>
           <option value="5" selected>5</option>
           <option value="8">8</option>
@@ -444,8 +445,8 @@
         </select>
       </div>
       <div class="control">
-        <label for="ctl-bands">Bands</label>
-        <select id="ctl-bands">
+        <label for="ctl-bands-atk">Bands</label>
+        <select id="ctl-bands-atk">
           <option value="3">3</option>
           <option value="4">4</option>
           <option value="5" selected>5</option>
@@ -453,9 +454,52 @@
       </div>
     </div>
     <div class="table-wrap">
-      <table id="ticker-table">
-        <thead><tr id="ticker-head"></tr></thead>
-        <tbody id="ticker-tbody"></tbody>
+      <table class="ticker-table" id="ticker-table-atk">
+        <thead><tr id="ticker-head-atk"></tr></thead>
+        <tbody id="ticker-tbody-atk"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="section-head">
+      <h2>Defensive Fixture Ticker</h2>
+      <p class="section-note">
+        For picking defenders/goalkeepers. Each cell is colored by how
+        <em>weak</em> that opponent's attack is at that venue (xG per match)
+        &mdash; ranked against the other 19 teams and split into bands, green
+        (easiest) through red (hardest). A row that opens green has the
+        easiest run of fixtures for a <strong>clean sheet</strong>.
+      </p>
+    </div>
+    <div class="legend" id="tier-legend-def"></div>
+    <div class="controls">
+      <div class="control">
+        <label for="ctl-start-def">From gameweek</label>
+        <select id="ctl-start-def"></select>
+      </div>
+      <div class="control">
+        <label for="ctl-span-def">Gameweeks shown</label>
+        <select id="ctl-span-def">
+          <option value="3">3</option>
+          <option value="5" selected>5</option>
+          <option value="8">8</option>
+          <option value="10">10</option>
+        </select>
+      </div>
+      <div class="control">
+        <label for="ctl-bands-def">Bands</label>
+        <select id="ctl-bands-def">
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5" selected>5</option>
+        </select>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="ticker-table" id="ticker-table-def">
+        <thead><tr id="ticker-head-def"></tr></thead>
+        <tbody id="ticker-tbody-def"></tbody>
       </table>
     </div>
   </section>
@@ -645,6 +689,7 @@
   // have played different numbers of home/away games (blank/double
   // gameweeks), a raw total unfairly favors whoever's played more.
   const XGC_BY_TEAM = Object.fromEntries(HOME_AWAY.map(r => [r.short, { home: r.homeXGCPerMatch, away: r.awayXGCPerMatch }]));
+  const XG_BY_TEAM = Object.fromEntries(HOME_AWAY.map(r => [r.short, { home: r.homeXGPerMatch, away: r.awayXGPerMatch }]));
   const ALL_SHORTS = Object.keys(FIXTURES_BY_TEAM).sort();
   const ALL_GWS = [...new Set(Object.values(FIXTURES_BY_TEAM).flat().map(f => f.gw))].sort((a, b) => a - b);
 
@@ -672,10 +717,14 @@
     ],
   };
 
-  function computeBands(k) {
+  // `ascending: false` (attack ticker) ranks highest-value-first -- highest
+  // xGC/match is the easiest team to score against. `ascending: true`
+  // (defence ticker) ranks lowest-value-first -- lowest xG/match is the
+  // easiest attack to keep a clean sheet against.
+  function computeBands(k, valuesByTeam, ascending) {
     const palette = PALETTES[k];
     const tierOf = (values) => {
-      const ranked = [...values].sort((a, b) => b.val - a.val); // highest xGC first = easiest
+      const ranked = [...values].sort((a, b) => ascending ? a.val - b.val : b.val - a.val);
       const n = ranked.length;
       const out = {};
       ranked.forEach((r, i) => {
@@ -684,58 +733,66 @@
       });
       return out;
     };
-    const homeBand = tierOf(ALL_SHORTS.map(s => ({ short: s, val: XGC_BY_TEAM[s].home })));
-    const awayBand = tierOf(ALL_SHORTS.map(s => ({ short: s, val: XGC_BY_TEAM[s].away })));
+    const homeBand = tierOf(ALL_SHORTS.map(s => ({ short: s, val: valuesByTeam[s].home })));
+    const awayBand = tierOf(ALL_SHORTS.map(s => ({ short: s, val: valuesByTeam[s].away })));
     return { homeBand, awayBand };
   }
 
-  function renderLegend(k) {
-    document.getElementById("tier-legend").innerHTML = PALETTES[k].map(t => `
-      <span><span class="swatch" style="background:var(--${t.cls}-bg)"></span>${t.label}</span>
-    `).join("");
-  }
+  // One ticker instance: `suffix` picks its DOM elements (ctl-start-${suffix}
+  // etc.), `valuesByTeam` and `ascending` pick what it bands on.
+  function setupTicker(suffix, valuesByTeam, ascending) {
+    const legendEl = document.getElementById(`tier-legend-${suffix}`);
+    const ctlStart = document.getElementById(`ctl-start-${suffix}`);
+    const ctlSpan = document.getElementById(`ctl-span-${suffix}`);
+    const ctlBands = document.getElementById(`ctl-bands-${suffix}`);
+    const headEl = document.getElementById(`ticker-head-${suffix}`);
+    const bodyEl = document.getElementById(`ticker-tbody-${suffix}`);
 
-  const ctlStart = document.getElementById("ctl-start");
-  const ctlSpan = document.getElementById("ctl-span");
-  const ctlBands = document.getElementById("ctl-bands");
-  ALL_GWS.forEach(gw => {
-    const opt = document.createElement("option");
-    opt.value = gw; opt.textContent = "GW " + gw;
-    if (gw === ALL_GWS[0]) opt.selected = true;
-    ctlStart.appendChild(opt);
-  });
+    ALL_GWS.forEach(gw => {
+      const opt = document.createElement("option");
+      opt.value = gw; opt.textContent = "GW " + gw;
+      if (gw === ALL_GWS[0]) opt.selected = true;
+      ctlStart.appendChild(opt);
+    });
 
-  function renderTicker() {
-    const start = Number(ctlStart.value);
-    const span = Number(ctlSpan.value);
-    const k = Number(ctlBands.value);
-    const gws = ALL_GWS.filter(g => g >= start).slice(0, span);
-    const { homeBand, awayBand } = computeBands(k);
-    renderLegend(k);
+    function render() {
+      const start = Number(ctlStart.value);
+      const span = Number(ctlSpan.value);
+      const k = Number(ctlBands.value);
+      const gws = ALL_GWS.filter(g => g >= start).slice(0, span);
+      const { homeBand, awayBand } = computeBands(k, valuesByTeam, ascending);
 
-    document.getElementById("ticker-head").innerHTML =
-      `<th class="team-col" style="text-align:left">Team</th>` +
-      gws.map(g => `<th class="gw-col">GW ${g}</th>`).join("");
+      legendEl.innerHTML = PALETTES[k].map(t => `
+        <span><span class="swatch" style="background:var(--${t.cls}-bg)"></span>${t.label}</span>
+      `).join("");
 
-    document.getElementById("ticker-tbody").innerHTML = ALL_SHORTS.map(short => {
-      const cells = gws.map(g => {
-        const fx = FIXTURES_BY_TEAM[short].filter(f => f.gw === g);
-        if (fx.length === 0) {
-          return `<td class="fx-cell"><div class="fx-pill blank">&mdash;</div></td>`;
-        }
-        const pills = fx.map(f => {
-          const oppIsHome = f.venue === "A"; // our team away -> opponent home
-          const tier = oppIsHome ? homeBand[f.opp] : awayBand[f.opp];
-          return `<div class="fx-pill ${tier}">
-                    <span>${f.opp}</span><span class="venue">${f.venue}</span>
-                  </div>`;
+      headEl.innerHTML =
+        `<th class="team-col" style="text-align:left">Team</th>` +
+        gws.map(g => `<th class="gw-col">GW ${g}</th>`).join("");
+
+      bodyEl.innerHTML = ALL_SHORTS.map(short => {
+        const cells = gws.map(g => {
+          const fx = FIXTURES_BY_TEAM[short].filter(f => f.gw === g);
+          if (fx.length === 0) {
+            return `<td class="fx-cell"><div class="fx-pill blank">&mdash;</div></td>`;
+          }
+          const pills = fx.map(f => {
+            const oppIsHome = f.venue === "A"; // our team away -> opponent home
+            const tier = oppIsHome ? homeBand[f.opp] : awayBand[f.opp];
+            return `<div class="fx-pill ${tier}">
+                      <span>${f.opp}</span><span class="venue">${f.venue}</span>
+                    </div>`;
+          }).join("");
+          return `<td class="fx-cell"><div class="fx-double">${pills}</div></td>`;
         }).join("");
-        return `<td class="fx-cell"><div class="fx-double">${pills}</div></td>`;
+        return `<tr><td class="team-col">${TEAM_SHORT_TO_FULL[short]}</td>${cells}</tr>`;
       }).join("");
-      return `<tr><td class="team-col">${TEAM_SHORT_TO_FULL[short]}</td>${cells}</tr>`;
-    }).join("");
+    }
+
+    [ctlStart, ctlSpan, ctlBands].forEach(el => el.addEventListener("change", render));
+    render();
   }
 
-  [ctlStart, ctlSpan, ctlBands].forEach(el => el.addEventListener("change", renderTicker));
-  renderTicker();
+  setupTicker("atk", XGC_BY_TEAM, false);
+  setupTicker("def", XG_BY_TEAM, true);
 </script>
