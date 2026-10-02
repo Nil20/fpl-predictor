@@ -219,19 +219,6 @@
   }
   footer a { color: var(--focus); }
   .refresh-wrap { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  #refresh-btn {
-    font-family: "IBM Plex Mono", monospace;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--pitch-strong);
-    background: var(--pitch-tint);
-    border: 1px solid var(--line-strong);
-    border-radius: 5px;
-    padding: 5px 10px;
-    cursor: pointer;
-  }
-  #refresh-btn:hover { background: var(--gold-tint); color: var(--ink); }
-  #refresh-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
   #refresh-note {
     max-width: 40ch;
     font-size: 0.78rem;
@@ -508,9 +495,8 @@
     <span>Source: Understat (xG, xGC) &middot; goals and points computed from Understat match results, cross-checked against the FPL API.</span>
     <span class="refresh-wrap">
       <span id="asof"></span>
-      <button id="refresh-btn" type="button">&#8635; Refresh data</button>
-      <span id="refresh-note" hidden>
-        A published page can't fetch live data itself &mdash; ask Claude to
+      <span id="refresh-note">
+        &mdash; a published page can't fetch live data itself; ask Claude to
         refresh this dashboard, or run <code>python -m fpl_predictor refresh</code>
         in the project folder, then re-publish.
       </span>
@@ -603,10 +589,6 @@
 
   document.getElementById("asof").textContent =
     "Generated " + new Date().toISOString().slice(0, 10);
-
-  document.getElementById("refresh-btn").addEventListener("click", () => {
-    document.getElementById("refresh-note").hidden = false;
-  });
 
   render();
 
