@@ -361,18 +361,18 @@
     <table id="tbl">
       <thead>
         <tr>
-          <th data-key="team" data-type="string" aria-sort="none">Team<span class="arrow">&#8645;</span></th>
-          <th data-key="played" data-type="number" aria-sort="none">P<span class="arrow">&#8645;</span></th>
-          <th data-key="GF" data-type="number" aria-sort="none">GF<span class="arrow">&#8645;</span></th>
-          <th data-key="GA" data-type="number" aria-sort="none">GA<span class="arrow">&#8645;</span></th>
-          <th data-key="GD" data-type="number" aria-sort="none">GD<span class="arrow">&#8645;</span></th>
-          <th data-key="xG" data-type="number" aria-sort="none">xG<span class="arrow">&#8645;</span></th>
-          <th data-key="xGC" data-type="number" aria-sort="none">xGC<span class="arrow">&#8645;</span></th>
-          <th data-key="xGD" data-type="number" aria-sort="none">xGD<span class="arrow">&#8645;</span></th>
-          <th data-key="xGPerMatch" data-type="number" aria-sort="none">xG/M<span class="arrow">&#8645;</span></th>
-          <th data-key="xGCPerMatch" data-type="number" aria-sort="none">xGC/M<span class="arrow">&#8645;</span></th>
-          <th data-key="xGDPerMatch" data-type="number" aria-sort="none">xGD/M<span class="arrow">&#8645;</span></th>
-          <th data-key="Pts" data-type="number" aria-sort="descending">Pts<span class="arrow">&#8645;</span></th>
+          <th data-key="team" data-type="string" aria-sort="none" title="Club name">Team<span class="arrow">&#8645;</span></th>
+          <th data-key="played" data-type="number" aria-sort="none" title="Matches played this season">P<span class="arrow">&#8645;</span></th>
+          <th data-key="GF" data-type="number" aria-sort="none" title="Goals scored (for)">GF<span class="arrow">&#8645;</span></th>
+          <th data-key="GA" data-type="number" aria-sort="none" title="Goals conceded (against)">GA<span class="arrow">&#8645;</span></th>
+          <th data-key="GD" data-type="number" aria-sort="none" title="Goal difference (GF minus GA)">GD<span class="arrow">&#8645;</span></th>
+          <th data-key="xG" data-type="number" aria-sort="none" title="Expected goals -- shot quality and quantity summed across the season, a proxy for scoring chances created">xG<span class="arrow">&#8645;</span></th>
+          <th data-key="xGC" data-type="number" aria-sort="none" title="Expected goals conceded -- same idea, from the defensive side">xGC<span class="arrow">&#8645;</span></th>
+          <th data-key="xGD" data-type="number" aria-sort="none" title="xG minus xGC -- season-long attack-minus-defense balance">xGD<span class="arrow">&#8645;</span></th>
+          <th data-key="xGPerMatch" data-type="number" aria-sort="none" title="xG per match played">xG/M<span class="arrow">&#8645;</span></th>
+          <th data-key="xGCPerMatch" data-type="number" aria-sort="none" title="xGC per match played">xGC/M<span class="arrow">&#8645;</span></th>
+          <th data-key="xGDPerMatch" data-type="number" aria-sort="none" title="xG/M minus xGC/M -- comparable across teams that have played a different number of matches">xGD/M<span class="arrow">&#8645;</span></th>
+          <th data-key="Pts" data-type="number" aria-sort="descending" title="League points (3 for a win, 1 for a draw)">Pts<span class="arrow">&#8645;</span></th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -396,21 +396,21 @@
             <th colspan="7">Away</th>
           </tr>
           <tr>
-            <th data-key="team" data-type="string" aria-sort="none">Team<span class="arrow">&#8645;</span></th>
-            <th data-key="homeG" data-type="number" aria-sort="none">G<span class="arrow">&#8645;</span></th>
-            <th data-key="homeXG" data-type="number" aria-sort="none">xG<span class="arrow">&#8645;</span></th>
-            <th data-key="homeXGC" data-type="number" aria-sort="none">xGC<span class="arrow">&#8645;</span></th>
-            <th data-key="homeXGD" data-type="number" aria-sort="none">xGD<span class="arrow">&#8645;</span></th>
-            <th data-key="homeXGPerMatch" data-type="number" aria-sort="none">xG/M<span class="arrow">&#8645;</span></th>
-            <th data-key="homeXGCPerMatch" data-type="number" aria-sort="none">xGC/M<span class="arrow">&#8645;</span></th>
-            <th data-key="homeXGDPerMatch" data-type="number" aria-sort="none">xGD/M<span class="arrow">&#8645;</span></th>
-            <th data-key="awayG" data-type="number" aria-sort="none">G<span class="arrow">&#8645;</span></th>
-            <th data-key="awayXG" data-type="number" aria-sort="none">xG<span class="arrow">&#8645;</span></th>
-            <th data-key="awayXGC" data-type="number" aria-sort="none">xGC<span class="arrow">&#8645;</span></th>
-            <th data-key="awayXGD" data-type="number" aria-sort="none">xGD<span class="arrow">&#8645;</span></th>
-            <th data-key="awayXGPerMatch" data-type="number" aria-sort="none">xG/M<span class="arrow">&#8645;</span></th>
-            <th data-key="awayXGCPerMatch" data-type="number" aria-sort="none">xGC/M<span class="arrow">&#8645;</span></th>
-            <th data-key="awayXGDPerMatch" data-type="number" aria-sort="none">xGD/M<span class="arrow">&#8645;</span></th>
+            <th data-key="team" data-type="string" aria-sort="none" title="Club name">Team<span class="arrow">&#8645;</span></th>
+            <th data-key="homeG" data-type="number" aria-sort="none" title="Home games played this season">G<span class="arrow">&#8645;</span></th>
+            <th data-key="homeXG" data-type="number" aria-sort="none" title="Expected goals scored in home games">xG<span class="arrow">&#8645;</span></th>
+            <th data-key="homeXGC" data-type="number" aria-sort="none" title="Expected goals conceded in home games">xGC<span class="arrow">&#8645;</span></th>
+            <th data-key="homeXGD" data-type="number" aria-sort="none" title="Home xG minus xGC">xGD<span class="arrow">&#8645;</span></th>
+            <th data-key="homeXGPerMatch" data-type="number" aria-sort="none" title="Home xG per match">xG/M<span class="arrow">&#8645;</span></th>
+            <th data-key="homeXGCPerMatch" data-type="number" aria-sort="none" title="Home xGC per match">xGC/M<span class="arrow">&#8645;</span></th>
+            <th data-key="homeXGDPerMatch" data-type="number" aria-sort="none" title="Home xG/M minus xGC/M -- what the tickers band home fixtures on">xGD/M<span class="arrow">&#8645;</span></th>
+            <th data-key="awayG" data-type="number" aria-sort="none" title="Away games played this season">G<span class="arrow">&#8645;</span></th>
+            <th data-key="awayXG" data-type="number" aria-sort="none" title="Expected goals scored in away games">xG<span class="arrow">&#8645;</span></th>
+            <th data-key="awayXGC" data-type="number" aria-sort="none" title="Expected goals conceded in away games">xGC<span class="arrow">&#8645;</span></th>
+            <th data-key="awayXGD" data-type="number" aria-sort="none" title="Away xG minus xGC">xGD<span class="arrow">&#8645;</span></th>
+            <th data-key="awayXGPerMatch" data-type="number" aria-sort="none" title="Away xG per match">xG/M<span class="arrow">&#8645;</span></th>
+            <th data-key="awayXGCPerMatch" data-type="number" aria-sort="none" title="Away xGC per match">xGC/M<span class="arrow">&#8645;</span></th>
+            <th data-key="awayXGDPerMatch" data-type="number" aria-sort="none" title="Away xG/M minus xGC/M -- what the tickers band away fixtures on">xGD/M<span class="arrow">&#8645;</span></th>
           </tr>
         </thead>
         <tbody id="split-tbody"></tbody>
