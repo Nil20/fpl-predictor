@@ -324,6 +324,7 @@
   .fx-pill.tier-lightred { background: var(--tier-lightred-bg); color: var(--tier-lightred-fg); }
   .fx-pill.tier-hard { background: var(--tier-hard-bg); color: var(--tier-hard-fg); }
   .fx-double { display: flex; flex-direction: column; }
+  .ticker-table td.total-col { font-weight: 600; border-left: 1px solid var(--line); }
   .fx-double .fx-pill { min-height: 22px; }
 </style>
 
@@ -737,6 +738,31 @@
       ctlStart.appendChild(opt);
     });
 
+    // Rows sort by team name or by Total. Total's first click puts the
+    // easiest run (lowest total) on top.
+    let sortKey = "team", sortDir = "ascending";
+
+    headEl.addEventListener("click", e => {
+      const th = e.target.closest("th[data-key]");
+      if (!th) return;
+      const key = th.dataset.key;
+      if (sortKey === key) {
+        sortDir = sortDir === "descending" ? "ascending" : "descending";
+      } else {
+        sortKey = key;
+        sortDir = "ascending";
+      }
+      render();
+    });
+    headEl.addEventListener("keydown", e => {
+      if ((e.key === "Enter" || e.key === " ") && e.target.closest("th[data-key]")) {
+        e.preventDefault();
+        const key = e.target.closest("th[data-key]").dataset.key;
+        e.target.click();
+        headEl.querySelector(`th[data-key="${key}"]`).focus(); // header was re-rendered
+      }
+    });
+
     function render() {
       const start = Number(ctlStart.value);
       const span = Number(ctlSpan.value);
@@ -744,15 +770,34 @@
       const gws = ALL_GWS.filter(g => g >= start).slice(0, span);
       const { homeBand, awayBand } = computeBands(k, valuesByTeam, ascending);
 
+      // Each fixture's difficulty is its band number: 1 (easiest) up to k
+      // (hardest). Total adds them across every fixture shown -- doubles
+      // count twice, blanks add nothing.
+      const difficulty = Object.fromEntries(PALETTES[k].map((t, i) => [t.cls, i + 1]));
+      const totals = Object.fromEntries(ALL_SHORTS.map(short => [
+        short,
+        FIXTURES_BY_TEAM[short]
+          .filter(f => gws.includes(f.gw))
+          .reduce((acc, f) => acc + difficulty[f.venue === "A" ? homeBand[f.opp] : awayBand[f.opp]], 0),
+      ]));
+      const rows = [...ALL_SHORTS].sort((a, b) => {
+        const cmp = sortKey === "team"
+          ? TEAM_SHORT_TO_FULL[a].localeCompare(TEAM_SHORT_TO_FULL[b])
+          : totals[a] - totals[b];
+        return sortDir === "ascending" ? cmp : -cmp;
+      });
+      const ariaSort = key => sortKey === key ? sortDir : "none";
+
       legendEl.innerHTML = PALETTES[k].map(t => `
         <span><span class="swatch" style="background:var(--${t.cls}-bg)"></span>${t.label}</span>
       `).join("");
 
       headEl.innerHTML =
-        `<th class="team-col" style="text-align:left">Team</th>` +
-        gws.map(g => `<th class="gw-col">GW ${g}</th>`).join("");
+        `<th class="team-col" style="text-align:left" data-key="team" tabindex="0" aria-sort="${ariaSort('team')}" title="Club name">Team<span class="arrow">&#8645;</span></th>` +
+        `<th data-key="total" tabindex="0" aria-sort="${ariaSort('total')}" title="Sum of fixture difficulty over the gameweeks shown (1 = easiest band, ${k} = hardest) -- lower is an easier run">Total<span class="arrow">&#8645;</span></th>` +
+        gws.map(g => `<th class="gw-col" style="cursor:default">GW ${g}</th>`).join("");
 
-      bodyEl.innerHTML = ALL_SHORTS.map(short => {
+      bodyEl.innerHTML = rows.map(short => {
         const cells = gws.map(g => {
           const fx = FIXTURES_BY_TEAM[short].filter(f => f.gw === g);
           if (fx.length === 0) {
@@ -767,7 +812,7 @@
           }).join("");
           return `<td class="fx-cell"><div class="fx-double">${pills}</div></td>`;
         }).join("");
-        return `<tr><td class="team-col">${TEAM_SHORT_TO_FULL[short]}</td>${cells}</tr>`;
+        return `<tr><td class="team-col">${TEAM_SHORT_TO_FULL[short]}</td><td class="total-col">${totals[short]}</td>${cells}</tr>`;
       }).join("");
     }
 
