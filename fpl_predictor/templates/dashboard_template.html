@@ -325,6 +325,11 @@
   .fx-pill.tier-hard { background: var(--tier-hard-bg); color: var(--tier-hard-fg); }
   .fx-double { display: flex; flex-direction: column; }
   .ticker-table td.total-col { font-weight: 600; border-left: 1px solid var(--line); }
+  .ticker-table td.team-col.tier-easy { background: var(--tier-easy-bg); color: var(--tier-easy-fg); }
+  .ticker-table td.team-col.tier-lightgreen { background: var(--tier-lightgreen-bg); color: var(--tier-lightgreen-fg); }
+  .ticker-table td.team-col.tier-mid { background: var(--tier-mid-bg); color: var(--tier-mid-fg); }
+  .ticker-table td.team-col.tier-lightred { background: var(--tier-lightred-bg); color: var(--tier-lightred-fg); }
+  .ticker-table td.team-col.tier-hard { background: var(--tier-hard-bg); color: var(--tier-hard-fg); }
   .fx-double .fx-pill { min-height: 22px; }
 </style>
 
@@ -414,7 +419,9 @@
         that opponent's defense is <em>at that venue</em> (xGC per match)
         &mdash; ranked against the other 19 teams and split into bands, green
         (easiest) through red (hardest). A row that opens green has the
-        easiest run of fixtures to <strong>score against</strong>.
+        easiest run of fixtures to <strong>score against</strong>. The team
+        name is colored by that team's own attack (season xG per match), green
+        for the strongest.
       </p>
     </div>
     <div class="legend" id="tier-legend-atk"></div>
@@ -457,7 +464,9 @@
         <em>weak</em> that opponent's attack is at that venue (xG per match)
         &mdash; ranked against the other 19 teams and split into bands, green
         (easiest) through red (hardest). A row that opens green has the
-        easiest run of fixtures for a <strong>clean sheet</strong>.
+        easiest run of fixtures for a <strong>clean sheet</strong>. The team
+        name is colored by that team's own defense (season xGC per match),
+        green for the meanest.
       </p>
     </div>
     <div class="legend" id="tier-legend-def"></div>
@@ -704,26 +713,29 @@
   // xGC/match is the easiest team to score against. `ascending: true`
   // (defence ticker) ranks lowest-value-first -- lowest xG/match is the
   // easiest attack to keep a clean sheet against.
-  function computeBands(k, valuesByTeam, ascending) {
+  function tierOf(k, values, ascending) {
     const palette = PALETTES[k];
-    const tierOf = (values) => {
-      const ranked = [...values].sort((a, b) => ascending ? a.val - b.val : b.val - a.val);
-      const n = ranked.length;
-      const out = {};
-      ranked.forEach((r, i) => {
-        const groupIdx = Math.min(k - 1, Math.floor((i * k) / n));
-        out[r.short] = palette[groupIdx].cls;
-      });
-      return out;
-    };
-    const homeBand = tierOf(ALL_SHORTS.map(s => ({ short: s, val: valuesByTeam[s].home })));
-    const awayBand = tierOf(ALL_SHORTS.map(s => ({ short: s, val: valuesByTeam[s].away })));
+    const ranked = [...values].sort((a, b) => ascending ? a.val - b.val : b.val - a.val);
+    const n = ranked.length;
+    const out = {};
+    ranked.forEach((r, i) => {
+      const groupIdx = Math.min(k - 1, Math.floor((i * k) / n));
+      out[r.short] = palette[groupIdx].cls;
+    });
+    return out;
+  }
+
+  function computeBands(k, valuesByTeam, ascending) {
+    const homeBand = tierOf(k, ALL_SHORTS.map(s => ({ short: s, val: valuesByTeam[s].home })), ascending);
+    const awayBand = tierOf(k, ALL_SHORTS.map(s => ({ short: s, val: valuesByTeam[s].away })), ascending);
     return { homeBand, awayBand };
   }
 
   // One ticker instance: `suffix` picks its DOM elements (ctl-start-${suffix}
   // etc.), `valuesByTeam` and `ascending` pick what it bands on.
-  function setupTicker(suffix, valuesByTeam, ascending) {
+  // `ownValueByTeam` colors the Team cells by the team's own season-long
+  // strength, banded the same way (same `ascending` -- green is best).
+  function setupTicker(suffix, valuesByTeam, ascending, ownValueByTeam, ownLabel) {
     const legendEl = document.getElementById(`tier-legend-${suffix}`);
     const ctlStart = document.getElementById(`ctl-start-${suffix}`);
     const ctlSpan = document.getElementById(`ctl-span-${suffix}`);
@@ -769,6 +781,7 @@
       const k = Number(ctlBands.value);
       const gws = ALL_GWS.filter(g => g >= start).slice(0, span);
       const { homeBand, awayBand } = computeBands(k, valuesByTeam, ascending);
+      const ownBand = tierOf(k, ALL_SHORTS.map(s => ({ short: s, val: ownValueByTeam[s] })), ascending);
 
       // Each fixture's difficulty is its band number: 1 (easiest) up to k
       // (hardest). Total adds them across every fixture shown -- doubles
@@ -812,7 +825,7 @@
           }).join("");
           return `<td class="fx-cell"><div class="fx-double">${pills}</div></td>`;
         }).join("");
-        return `<tr><td class="team-col">${TEAM_SHORT_TO_FULL[short]}</td><td class="total-col">${totals[short]}</td>${cells}</tr>`;
+        return `<tr><td class="team-col ${ownBand[short]}" title="${ownLabel}: ${fmt(ownValueByTeam[short])}">${TEAM_SHORT_TO_FULL[short]}</td><td class="total-col">${totals[short]}</td>${cells}</tr>`;
       }).join("");
     }
 
@@ -820,6 +833,8 @@
     render();
   }
 
-  setupTicker("atk", XGC_BY_TEAM, false);
-  setupTicker("def", XG_BY_TEAM, true);
+  const OWN_XG = Object.fromEntries(DATA.map(r => [r.short, r.xGPerMatch]));
+  const OWN_XGC = Object.fromEntries(DATA.map(r => [r.short, r.xGCPerMatch]));
+  setupTicker("atk", XGC_BY_TEAM, false, OWN_XG, "Season xG per match");
+  setupTicker("def", XG_BY_TEAM, true, OWN_XGC, "Season xGC per match");
 </script>
