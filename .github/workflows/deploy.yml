@@ -1,0 +1,37 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Build dashboard from live data
+        run: python -m fpl_predictor refresh
+
+      - name: Stage static site
+        run: |
+          mkdir -p site
+          cp output/dashboard.html site/index.html
+
+      - name: Deploy to production
+        run: npx --yes vercel@latest deploy site --prod --yes --token "${{ secrets.VERCEL_TOKEN }}"
