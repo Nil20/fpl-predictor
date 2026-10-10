@@ -324,6 +324,7 @@
   .fx-pill.tier-lightred { background: var(--tier-lightred-bg); color: var(--tier-lightred-fg); }
   .fx-pill.tier-hard { background: var(--tier-hard-bg); color: var(--tier-hard-fg); }
   .fx-double { display: flex; flex-direction: column; }
+  .ticker-table td.own-col { border-left: 1px solid var(--line); }
   .ticker-table td.total-col { font-weight: 600; border-left: 1px solid var(--line); }
   .ticker-table td.team-col.tier-easy { background: var(--tier-easy-bg); color: var(--tier-easy-fg); }
   .ticker-table td.team-col.tier-lightgreen { background: var(--tier-lightgreen-bg); color: var(--tier-lightgreen-fg); }
@@ -734,8 +735,9 @@
   // One ticker instance: `suffix` picks its DOM elements (ctl-start-${suffix}
   // etc.), `valuesByTeam` and `ascending` pick what it bands on.
   // `ownValueByTeam` colors the Team cells by the team's own season-long
-  // strength, banded the same way (same `ascending` -- green is best).
-  function setupTicker(suffix, valuesByTeam, ascending, ownValueByTeam, ownLabel) {
+  // strength, banded the same way (same `ascending` -- green is best), and
+  // fills the sortable `ownHeader` column.
+  function setupTicker(suffix, valuesByTeam, ascending, ownValueByTeam, ownLabel, ownHeader) {
     const legendEl = document.getElementById(`tier-legend-${suffix}`);
     const ctlStart = document.getElementById(`ctl-start-${suffix}`);
     const ctlSpan = document.getElementById(`ctl-span-${suffix}`);
@@ -750,9 +752,11 @@
       ctlStart.appendChild(opt);
     });
 
-    // Rows sort by team name or by Total. Total's first click puts the
-    // easiest run (lowest total) on top.
-    let sortKey = "team", sortDir = "ascending";
+    // Rows sort by team name, the team's own strength or Total. Rows open
+    // sorted strongest-first; a first click on own strength does the same,
+    // and a first click on Total puts the easiest run (lowest total) on top.
+    const ownBestDir = ascending ? "ascending" : "descending";
+    let sortKey = "own", sortDir = ownBestDir;
 
     headEl.addEventListener("click", e => {
       const th = e.target.closest("th[data-key]");
@@ -762,7 +766,7 @@
         sortDir = sortDir === "descending" ? "ascending" : "descending";
       } else {
         sortKey = key;
-        sortDir = "ascending";
+        sortDir = key === "own" ? ownBestDir : "ascending";
       }
       render();
     });
@@ -794,10 +798,12 @@
           .reduce((acc, f) => acc + difficulty[f.venue === "A" ? homeBand[f.opp] : awayBand[f.opp]], 0),
       ]));
       const rows = [...ALL_SHORTS].sort((a, b) => {
-        const cmp = sortKey === "team"
-          ? TEAM_SHORT_TO_FULL[a].localeCompare(TEAM_SHORT_TO_FULL[b])
+        const byName = TEAM_SHORT_TO_FULL[a].localeCompare(TEAM_SHORT_TO_FULL[b]);
+        if (sortKey === "team") return sortDir === "ascending" ? byName : -byName;
+        const cmp = sortKey === "own"
+          ? ownValueByTeam[a] - ownValueByTeam[b]
           : totals[a] - totals[b];
-        return sortDir === "ascending" ? cmp : -cmp;
+        return (sortDir === "ascending" ? cmp : -cmp) || byName;
       });
       const ariaSort = key => sortKey === key ? sortDir : "none";
 
@@ -807,6 +813,7 @@
 
       headEl.innerHTML =
         `<th class="team-col" style="text-align:left" data-key="team" tabindex="0" aria-sort="${ariaSort('team')}" title="Club name">Team<span class="arrow">&#8645;</span></th>` +
+        `<th data-key="own" tabindex="0" aria-sort="${ariaSort('own')}" title="${ownLabel} -- the team's own season-long rate, not its opponents'">${ownHeader}<span class="arrow">&#8645;</span></th>` +
         `<th data-key="total" tabindex="0" aria-sort="${ariaSort('total')}" title="Sum of fixture difficulty over the gameweeks shown (1 = easiest band, ${k} = hardest) -- lower is an easier run">Total<span class="arrow">&#8645;</span></th>` +
         gws.map(g => `<th class="gw-col" style="cursor:default">GW ${g}</th>`).join("");
 
@@ -825,7 +832,7 @@
           }).join("");
           return `<td class="fx-cell"><div class="fx-double">${pills}</div></td>`;
         }).join("");
-        return `<tr><td class="team-col ${ownBand[short]}" title="${ownLabel}: ${fmt(ownValueByTeam[short])}">${TEAM_SHORT_TO_FULL[short]}</td><td class="total-col">${totals[short]}</td>${cells}</tr>`;
+        return `<tr><td class="team-col ${ownBand[short]}" title="${ownLabel}: ${fmt(ownValueByTeam[short])}">${TEAM_SHORT_TO_FULL[short]}</td><td class="own-col">${ownValueByTeam[short].toFixed(2)}</td><td class="total-col">${totals[short]}</td>${cells}</tr>`;
       }).join("");
     }
 
@@ -835,6 +842,6 @@
 
   const OWN_XG = Object.fromEntries(DATA.map(r => [r.short, r.xGPerMatch]));
   const OWN_XGC = Object.fromEntries(DATA.map(r => [r.short, r.xGCPerMatch]));
-  setupTicker("atk", XGC_BY_TEAM, false, OWN_XG, "Season xG per match");
-  setupTicker("def", XG_BY_TEAM, true, OWN_XGC, "Season xGC per match");
+  setupTicker("atk", XGC_BY_TEAM, false, OWN_XG, "Season xG per match", "xG/M");
+  setupTicker("def", XG_BY_TEAM, true, OWN_XGC, "Season xGC per match", "xGC/M");
 </script>
