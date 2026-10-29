@@ -35,3 +35,9 @@ This writes `output/dashboard.html`; open it in a browser.
 
 Every push to `master` runs `.github/workflows/deploy.yml`, which fetches
 fresh data, builds the dashboard and deploys it to Vercel.
+
+The same workflow also runs every 3 hours and redeploys once a new
+gameweek has finished on FPL and Understat has all of its results
+(`python -m fpl_predictor check` decides). If that ever fails, the page
+notices on its own: 36 hours after the next gameweek's last kickoff it
+shows a "data may be out of date" modal.

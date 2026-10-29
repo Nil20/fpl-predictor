@@ -332,7 +332,49 @@
   .ticker-table td.team-col.tier-lightred { background: var(--tier-lightred-bg); color: var(--tier-lightred-fg); }
   .ticker-table td.team-col.tier-hard { background: var(--tier-hard-bg); color: var(--tier-hard-fg); }
   .fx-double .fx-pill { min-height: 22px; }
+
+  .stale-modal {
+    max-width: min(440px, calc(100vw - 32px));
+    padding: 22px 24px;
+    border: 1px solid var(--line-strong);
+    border-top: 4px solid var(--brick);
+    border-radius: 6px;
+    background: var(--paper-raised);
+    color: var(--ink);
+    font-family: "Source Sans 3", system-ui, sans-serif;
+  }
+  .stale-modal::backdrop { background: rgb(0 0 0 / 0.45); }
+  .stale-modal .eyebrow { color: var(--brick); }
+  .stale-modal h2 {
+    font-family: "Oswald", "Arial Narrow", sans-serif;
+    text-transform: uppercase;
+    font-size: 1.4rem;
+    margin: 6px 0 10px;
+  }
+  .stale-modal p { margin: 0 0 12px; color: var(--ink-soft); line-height: 1.45; }
+  .stale-modal a { color: var(--pitch); }
+  .stale-modal button {
+    font: inherit;
+    font-weight: 600;
+    padding: 8px 16px;
+    border: 0;
+    border-radius: 4px;
+    background: var(--pitch);
+    color: var(--paper);
+    cursor: pointer;
+  }
+  .stale-modal button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 </style>
+
+<dialog class="stale-modal" id="stale-modal" aria-labelledby="stale-title">
+  <span class="eyebrow">Data may be out of date</span>
+  <h2 id="stale-title">This dashboard missed an update</h2>
+  <p id="stale-body"></p>
+  <p>The automatic redeploy probably failed &mdash; check the
+    <a href="https://github.com/Nil20/fpl-predictor/actions/workflows/deploy.yml">Deploy to Vercel</a>
+    workflow. Until then, treat these numbers with caution.</p>
+  <form method="dialog"><button autofocus>Got it</button></form>
+</dialog>
 
 <div class="page">
   <header>
@@ -844,4 +886,17 @@
   const OWN_XGC = Object.fromEntries(DATA.map(r => [r.short, r.xGCPerMatch]));
   setupTicker("atk", XGC_BY_TEAM, false, OWN_XG, "Season xG per match", "xG/M");
   setupTicker("def", XG_BY_TEAM, true, OWN_XGC, "Season xGC per match", "xGC/M");
+
+  // ---------------------------------------------------------------------
+  // Stale-data warning. Filled in at build time with when the next
+  // gameweek should be over (plus a grace period); if this page is still
+  // being served past then, the scheduled redeploy didn't happen.
+  const STALE_CHECK = null;
+  if (STALE_CHECK && Date.now() > Date.parse(STALE_CHECK.after)) {
+    document.getElementById("stale-body").textContent =
+      `Gameweek ${STALE_CHECK.gw} should have finished by ` +
+      new Date(STALE_CHECK.after).toLocaleString() +
+      `, but this page still only covers matches up to Gameweek ${STALE_CHECK.gw - 1}.`;
+    document.getElementById("stale-modal").showModal();
+  }
 </script>

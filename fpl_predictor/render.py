@@ -30,6 +30,7 @@ _ASOF_RE = re.compile(
     r'"Generated " \+ new Date\(\)\.toISOString\(\)\.slice\(0, 10\);',
     re.DOTALL,
 )
+_STALE_RE = re.compile(r"const STALE_CHECK = null;")
 
 
 def render_dashboard(
@@ -39,6 +40,7 @@ def render_dashboard(
     current_gw: int,
     season_label: str,
     generated_at: str,
+    stale_check: dict | None,
 ) -> str:
     html = TEMPLATE_PATH.read_text()
 
@@ -57,6 +59,7 @@ def render_dashboard(
             _ASOF_RE,
             f'document.getElementById("asof").textContent = "Refreshed {generated_at}";',
         ),
+        ("STALE_CHECK", _STALE_RE, f"const STALE_CHECK = {json.dumps(stale_check)};"),
     ]
 
     for name, pattern, replacement in substitutions:
