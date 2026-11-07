@@ -240,6 +240,7 @@
     thead th, tbody td { padding: 8px 10px; font-size: 0.8rem; }
   }
 
+
   section.block { display: flex; flex-direction: column; gap: 14px; }
   .section-head { display: flex; flex-direction: column; gap: 4px; }
   h2 {
@@ -372,6 +373,10 @@
 
   /* tabs */
   .tabs {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--paper);
     display: flex;
     gap: 2px;
     overflow-x: auto;
@@ -434,13 +439,27 @@
     color: var(--ink-soft);
   }
   .combo-table td.fx-cell { min-width: 5.2em; }
-  .combo-info {
-    font-size: 0.85rem;
-    color: var(--ink-soft);
+  /* tapping a combo pops its breakdown up at the bottom of the screen */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    z-index: 20;
+    width: max-content;
+    max-width: min(560px, calc(100vw - 32px));
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 0.86rem;
+    line-height: 1.4;
     white-space: pre-line;
-    margin: -6px 0 0;
-    min-height: 1.3em;
+    box-shadow: 0 6px 24px rgb(0 0 0 / 0.25);
+    cursor: pointer;
   }
+  .toast[hidden] { display: none; }
+  .legend .hint { font-style: italic; }
   .seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 5px; overflow: hidden; }
   .seg button {
     font-family: "Source Sans 3", sans-serif;
@@ -532,6 +551,25 @@
     letter-spacing: 0.03em;
     margin: 6px 0 -8px;
   }
+
+  /* --- phones (last, so it wins over the rules above): shorter header, one-row controls, short team codes in grids */
+  .name-short { display: none; }
+  @media (max-width: 560px) {
+    body { padding: 16px; }
+    .page { gap: 18px; }
+    header { padding-bottom: 12px; }
+    h1 { font-size: 1.55rem; }
+    .subline { font-size: 0.86rem; }
+    h2 { font-size: 1.12rem; }
+    .controls { gap: 10px; padding: 10px 12px; }
+    .control { flex: 1 1 0; min-width: 84px; }
+    .control select { min-width: 0; width: 100%; padding: 6px 8px; font-size: 0.86rem; }
+    .grid-table .name-full { display: none; }
+    .grid-table .name-short { display: inline; }
+    .ticker-table.grid-table td.team-col { min-width: 0; padding-left: 8px; padding-right: 8px; }
+    .ticker-table.grid-table { min-width: 0; }
+    .ticker-table th.gw-col { min-width: 3.6em; }
+  }
 </style>
 
 <dialog class="stale-modal" id="stale-modal" aria-labelledby="stale-title">
@@ -543,6 +581,8 @@
     workflow. Until then, treat these numbers with caution.</p>
   <form method="dialog"><button autofocus>Got it</button></form>
 </dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <div class="page">
   <header>
@@ -694,7 +734,7 @@
       </div>
     </div>
     <div class="table-wrap">
-      <table class="ticker-table" id="ticker-table-atk">
+      <table class="ticker-table grid-table" id="ticker-table-atk">
         <thead><tr id="ticker-head-atk"></tr></thead>
         <tbody id="ticker-tbody-atk"></tbody>
       </table>
@@ -703,12 +743,11 @@
     <div class="tview" data-tview="combo" hidden>
       <div class="legend combo-legend"></div>
       <div class="table-wrap">
-        <table class="ticker-table combo-table" id="combo-tbl-atk">
+        <table class="ticker-table combo-table grid-table" id="combo-tbl-atk">
           <thead><tr id="combo-head-atk"></tr></thead>
           <tbody id="combo-tbody-atk"></tbody>
         </table>
       </div>
-      <p class="combo-info" id="combo-info-atk" aria-live="polite">Tap a combo for its breakdown.</p>
     </div>
   </section>
 
@@ -743,7 +782,7 @@
       </div>
     </div>
     <div class="table-wrap">
-      <table class="ticker-table" id="ticker-table-def">
+      <table class="ticker-table grid-table" id="ticker-table-def">
         <thead><tr id="ticker-head-def"></tr></thead>
         <tbody id="ticker-tbody-def"></tbody>
       </table>
@@ -752,12 +791,11 @@
     <div class="tview" data-tview="combo" hidden>
       <div class="legend combo-legend"></div>
       <div class="table-wrap">
-        <table class="ticker-table combo-table" id="combo-tbl-def">
+        <table class="ticker-table combo-table grid-table" id="combo-tbl-def">
           <thead><tr id="combo-head-def"></tr></thead>
           <tbody id="combo-tbody-def"></tbody>
         </table>
       </div>
-      <p class="combo-info" id="combo-info-def" aria-live="polite">Tap a combo for its breakdown.</p>
     </div>
   </section>
   </div>
@@ -803,7 +841,6 @@
         <tbody id="next-tbody"></tbody>
       </table>
     </div>
-    <p class="combo-info" id="next-info" aria-live="polite">Tap a combo for its breakdown.</p>
   </section>
   </div>
 
@@ -1165,7 +1202,7 @@
           }).join("");
           return `<td class="fx-cell"><div class="fx-double">${pills}</div></td>`;
         }).join("");
-        return `<tr><td class="team-col ${ownBand[short]}" title="${ownLabel}: ${fmt(ownValueByTeam[short])}">${TEAM_SHORT_TO_FULL[short]}</td><td class="own-col">${ownValueByTeam[short].toFixed(2)}</td><td class="total-col">${totals[short]}</td>${cells}</tr>`;
+        return `<tr><td class="team-col ${ownBand[short]}" title="${ownLabel}: ${fmt(ownValueByTeam[short])}"><span class="name-full">${TEAM_SHORT_TO_FULL[short]}</span><span class="name-short">${short}</span></td><td class="own-col">${ownValueByTeam[short].toFixed(2)}</td><td class="total-col">${totals[short]}</td>${cells}</tr>`;
       }).join("");
     }
 
@@ -1235,7 +1272,8 @@
       `<span><span class="dots"><i class="dot tier-easy"></i><i class="dot tier-hard"></i></span>team vs opponent</span>` +
       COMBO_PALETTE.map((t, i) =>
         `<span><span class="swatch" style="background:var(--${t.cls}-bg)"></span>${SCORE_LEGEND[i]}</span>`
-      ).join("");
+      ).join("") +
+      `<span class="hint">Tap a score for details</span>`;
   });
 
   function comboPill(c, withOpp) {
@@ -1248,14 +1286,23 @@
     return `<td class="fx-cell"><div class="fx-double">${combos.map(c => comboPill(c, withOpp)).join("")}</div></td>`;
   }
 
-  // Tapping (or Enter on) a combo shows its breakdown under the table --
-  // hover titles don't exist on phones.
-  function wireInfo(tableId, infoId) {
-    const table = document.getElementById(tableId);
-    const info = document.getElementById(infoId);
+  // Tapping (or Enter on) a combo pops its breakdown up at the bottom of
+  // the screen -- hover titles don't exist on phones, and a line under a
+  // long table would be off-screen. Tap the popup (or wait) to close it.
+  const toast = document.getElementById("toast");
+  let toastTimer;
+  function showToast(text) {
+    toast.textContent = text;
+    toast.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.hidden = true; }, 7000);
+  }
+  toast.addEventListener("click", () => { toast.hidden = true; });
+  function wireInfo(elId) {
+    const table = document.getElementById(elId);
     const show = target => {
       const pill = target.closest("[data-info]");
-      if (pill) info.textContent = pill.dataset.info;
+      if (pill) showToast(pill.dataset.info);
     };
     table.addEventListener("click", e => show(e.target));
     table.addEventListener("keydown", e => {
@@ -1336,7 +1383,6 @@
       const gw = Number(pick.value);
       document.getElementById("next-title").textContent = gw === NEXT_GW ? "Next Gameweek" : "Gameweek";
       document.getElementById("next-gw-label").innerHTML = `· GW ${gw}${gwBadges(gw)}`;
-      document.getElementById("next-info").textContent = "Tap a combo for its breakdown.";
       rows = ALL_SHORTS.map(short => {
         const fx = FIXTURES_BY_TEAM[short].filter(f => f.gw === gw);
         const atk = fx.map(f => combo("atk", short, f));
@@ -1381,8 +1427,8 @@
       }).join("");
     }
     wireSort(headEl, state, { team: "ascending" }, render);
-    wireInfo("next-tbl", "next-info");
-    wireInfo("next-picks", "next-info");
+    wireInfo("next-tbl");
+    wireInfo("next-picks");
     pick.addEventListener("change", () => { load(); render(); });
     load();
     render();
@@ -1437,9 +1483,9 @@
       { key: "total", label: "Total", title: "Attack + Defence" },
       { key: "atk", label: "Atk", title: "How far each team's attack week beats one even game (6), added up" },
       { key: "def", label: "Def", title: "How far each team's defence week beats one even game (6), added up" },
-      { key: "fixtures", label: "Fixt.", title: "Fixtures that week. 10 is normal; fewer = blank, more = double" },
       { label: "Best attack", title: "Top 3 teams by attack combo that week" },
       { label: "Best defence", title: "Top 3 teams by defence combo that week" },
+      { key: "fixtures", label: "Fixt.", title: "Fixtures that week. 10 is normal; fewer = blank, more = double" },
     ];
     const rankState = { key: "rank", dir: "ascending" };
     function renderRank() {
@@ -1455,9 +1501,9 @@
           <td><span class="bar" style="width:${Math.round((40 * r.total) / maxTotal)}px"></span>${r.total}</td>
           <td>${r.atk}</td>
           <td>${r.def}</td>
-          <td>${r.fixtures}</td>
           <td class="best-list">${bestList(r.atkBest)}</td>
           <td class="best-list">${bestList(r.defBest)}</td>
+          <td>${r.fixtures}</td>
         </tr>`).join("");
     }
     wireSort(rankHead, rankState, { rank: "ascending", gw: "ascending" }, renderRank);
@@ -1487,12 +1533,12 @@
         return (state.dir === "ascending" ? cmp : -cmp) || byTeamName(a, b);
       });
       bodyEl.innerHTML = sorted.map(s =>
-        `<tr><td class="team-col">${TEAM_SHORT_TO_FULL[s]}</td><td class="total-col">${sums[s]}</td>` +
+        `<tr><td class="team-col"><span class="name-full">${TEAM_SHORT_TO_FULL[s]}</span><span class="name-short">${s}</span></td><td class="total-col">${sums[s]}</td>` +
         PLAN_GWS.map(g => comboCell(cells[s][g], true)).join("") + `</tr>`
       ).join("");
     }
     wireSort(headEl, state, { team: "ascending" }, render);
-    wireInfo(`combo-tbl-${mode}`, `combo-info-${mode}`);
+    wireInfo(`combo-tbl-${mode}`);
     render();
   }
   if (NEXT_GW !== undefined) {
@@ -1505,6 +1551,7 @@
   function setTickerMode(m) {
     TMODE_BUTTONS.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.tmode === m)));
     document.querySelectorAll("[data-tview]").forEach(el => { el.hidden = el.dataset.tview !== m; });
+    toast.hidden = true;
     try { localStorage.setItem("fpl-ticker-mode", m); } catch (e) {}
   }
   TMODE_BUTTONS.forEach(b => b.addEventListener("click", () => setTickerMode(b.dataset.tmode)));
@@ -1525,11 +1572,23 @@
       b.tabIndex = on ? 0 : -1;
     });
     document.querySelectorAll("[data-panel]").forEach(p => { p.hidden = p.dataset.panel !== id; });
+    toast.hidden = true;
     try { localStorage.setItem("fpl-tab", id); } catch (e) {}
     try { history.replaceState(null, "", "#" + id); } catch (e) {}
+    const active = TAB_BUTTONS.find(b => b.dataset.tab === id);
+    const nav = active.parentElement;
+    nav.scrollLeft = active.offsetLeft - (nav.clientWidth - active.offsetWidth) / 2;
+  }
+  // Picking a tab while scrolled down (the tab bar is pinned) starts the
+  // new tab at its top rather than somewhere in its middle.
+  function scrollToTabs() {
+    // The pinned bar's own position reads 0 while stuck, so measure from
+    // the header just above it.
+    const top = document.querySelector("header").getBoundingClientRect().bottom + window.scrollY;
+    if (window.scrollY > top) window.scrollTo({ top });
   }
   TAB_BUTTONS.forEach((b, i) => {
-    b.addEventListener("click", () => showTab(b.dataset.tab));
+    b.addEventListener("click", () => { showTab(b.dataset.tab); scrollToTabs(); });
     b.addEventListener("keydown", e => {
       const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
       if (!step) return;
@@ -1549,7 +1608,7 @@
     e.preventDefault();
     setTickerMode("combo");
     showTab("tickers");
-    document.getElementById("panel-tickers").scrollIntoView({ behavior: "smooth", block: "start" });
+    scrollToTabs();
   });
 
   // ---------------------------------------------------------------------
