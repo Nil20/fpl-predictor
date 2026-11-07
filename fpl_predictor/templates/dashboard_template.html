@@ -1,4 +1,11 @@
-<title>xG League Table</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FPL xG Dashboard &middot; Next GW combos &amp; Chip Planner</title>
+<meta name="description" content="Fantasy Premier League fixture combos for every gameweek and a chip planner that ranks gameweeks, built on expected goals (xG).">
+<meta property="og:type" content="website">
+<meta property="og:title" content="FPL xG Dashboard: Next GW combos &amp; Chip Planner">
+<meta property="og:description" content="Who to captain, where the clean sheets are, and the best gameweeks for your chips, from expected goals (xG).">
+<meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -235,6 +242,7 @@
     thead th, tbody td { padding: 8px 10px; font-size: 0.8rem; }
   }
 
+
   section.block { display: flex; flex-direction: column; gap: 14px; }
   .section-head { display: flex; flex-direction: column; gap: 4px; }
   h2 {
@@ -364,6 +372,214 @@
     cursor: pointer;
   }
   .stale-modal button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  /* tabs */
+  .tabs {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--paper);
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--line-strong);
+    scrollbar-width: none;
+    margin-top: -8px;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs button {
+    font-family: "Oswald", sans-serif;
+    font-weight: 600;
+    font-size: 0.86rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: none;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    padding: 10px 12px 8px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .tabs button:hover { color: var(--ink); }
+  .tabs button[aria-selected="true"] { color: var(--pitch); border-bottom-color: var(--pitch); }
+  .tabs button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+  .panel { display: flex; flex-direction: column; gap: 22px; }
+  .panel[hidden] { display: none; }
+
+  /* compact "how it works" disclosure */
+  details.how { font-size: 0.86rem; color: var(--ink-soft); margin-top: -6px; }
+  details.how summary { cursor: pointer; font-weight: 600; color: var(--pitch); width: fit-content; }
+  details.how ul { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; max-width: 68ch; }
+
+  /* versus combos (next gameweek, chip planner) */
+  .combo-line { display: inline-flex; align-items: center; gap: 3px; }
+  .combo-line b { margin-left: 4px; font-size: 0.86rem; }
+  /* the two colours sit on a neutral chip so they read on any cell colour */
+  .dots {
+    display: inline-flex;
+    gap: 3px;
+    padding: 2px 3px;
+    border-radius: 8px;
+    background: var(--paper-raised);
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .dot.tier-easy { background: var(--tier-easy-bg); }
+  .dot.tier-lightgreen { background: var(--tier-lightgreen-bg); }
+  .dot.tier-mid { background: var(--tier-mid-bg); }
+  .dot.tier-lightred { background: var(--tier-lightred-bg); }
+  .dot.tier-hard { background: var(--tier-hard-bg); }
+  .fx-pill.combo { cursor: pointer; }
+  .fx-pill.combo:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+  .combo-table { min-width: 0; }
+  .combo-table td.team-col { white-space: normal; min-width: 7em; }
+  .combo-table td.team-col .vs {
+    display: block;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+  }
+  .combo-table td.fx-cell { min-width: 5.2em; }
+  /* tapping a combo pops its breakdown up at the bottom of the screen */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    z-index: 20;
+    width: max-content;
+    max-width: min(560px, calc(100vw - 32px));
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 0.86rem;
+    line-height: 1.4;
+    white-space: pre-line;
+    box-shadow: 0 6px 24px rgb(0 0 0 / 0.25);
+    cursor: pointer;
+  }
+  .toast[hidden] { display: none; }
+  .legend .hint { font-style: italic; }
+  .seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 5px; overflow: hidden; }
+  .seg button {
+    font-family: "Source Sans 3", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 7px 14px;
+    border: 0;
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--pitch); color: #f5f3ec; }
+  .seg button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+  #gw-rank td.best-list { font-size: 0.78rem; color: var(--ink-soft); text-align: left; }
+  #gw-rank tr.top td { background: var(--gold-tint); }
+  .bar {
+    display: inline-block;
+    height: 7px;
+    border-radius: 2px;
+    background: var(--pitch);
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  .picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+  .pick-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    background: var(--paper-raised);
+    border: 1px solid var(--line-strong);
+    border-left: 4px solid var(--pitch);
+    border-radius: 8px;
+  }
+  .pick-label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .pick-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pick {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    padding: 4px 9px;
+    border-radius: 5px;
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 600;
+    font-size: 0.86rem;
+  }
+  .pick .fixture { font-weight: 500; }
+  .pick .fixture b { font-weight: 700; }
+  .pick .v { font-size: 0.7rem; opacity: 0.8; }
+  .pick .pick-score {
+    margin-left: 3px;
+    padding-left: 8px;
+    border-left: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+    font-weight: 700;
+  }
+  .pick:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .pick { cursor: pointer; }
+  .pick.tier-easy { background: var(--tier-easy-bg); color: var(--tier-easy-fg); }
+  .pick.tier-lightgreen { background: var(--tier-lightgreen-bg); color: var(--tier-lightgreen-fg); }
+  .pick.tier-mid { background: var(--tier-mid-bg); color: var(--tier-mid-fg); }
+  .pick.tier-lightred { background: var(--tier-lightred-bg); color: var(--tier-lightred-fg); }
+  .pick.tier-hard { background: var(--tier-hard-bg); color: var(--tier-hard-fg); }
+  .badge {
+    display: inline-block;
+    margin-left: 5px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    vertical-align: middle;
+    background: var(--pitch-tint);
+    color: var(--pitch-strong);
+  }
+  .badge.blank { background: var(--brick-tint); color: var(--brick); }
+  thead .badge { background: var(--gold-tint); color: #2a1f05; }
+  thead .badge.blank { background: var(--brick-tint); color: var(--brick); }
+  .mode-bar { display: flex; flex-direction: column; gap: 8px; }
+  .mode-note { margin: 0; font-size: 0.9rem; color: var(--ink-soft); max-width: 68ch; }
+  .mode-note[hidden] { display: none; }
+  .tview { display: flex; flex-direction: column; gap: 14px; }
+  .tview[hidden] { display: none; }
+  a.goto { color: var(--pitch); font-weight: 600; font-size: 0.9rem; width: fit-content; }
+  h3 {
+    font-family: "Oswald", sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: 6px 0 -8px;
+  }
+
+  /* --- phones (last, so it wins over the rules above): shorter header, one-row controls, short team codes in grids */
+  .name-short { display: none; }
+  @media (max-width: 560px) {
+    body { padding: 16px; }
+    .page { gap: 18px; }
+    header { padding-bottom: 12px; }
+    h1 { font-size: 1.55rem; }
+    .subline { font-size: 0.86rem; }
+    h2 { font-size: 1.12rem; }
+    .controls { gap: 10px; padding: 10px 12px; }
+    .control { flex: 1 1 0; min-width: 84px; }
+    .control select { min-width: 0; width: 100%; padding: 6px 8px; font-size: 0.86rem; }
+    .grid-table .name-full { display: none; }
+    .grid-table .name-short { display: inline; }
+    .ticker-table.grid-table td.team-col { min-width: 0; padding-left: 8px; padding-right: 8px; }
+    .ticker-table.grid-table { min-width: 0; }
+    .ticker-table th.gw-col { min-width: 3.6em; }
+  }
 </style>
 
 <dialog class="stale-modal" id="stale-modal" aria-labelledby="stale-title">
@@ -376,17 +592,33 @@
   <form method="dialog"><button autofocus>Got it</button></form>
 </dialog>
 
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
 <div class="page">
   <header>
     <span class="eyebrow">Premier League &middot; 2026/27 &middot; after Gameweek 2</span>
-    <h1>xG League Table</h1>
+    <h1>FPL xG Dashboard</h1>
     <p class="subline">
-      Actual results next to underlying quality. <code>xG</code> is expected
-      goals scored, <code>xGC</code> is expected goals conceded &mdash; both
-      season-to-date. Click any column heading to sort.
+      Who to captain, where the clean sheets are, and when to play your
+      chips, from <code>xG</code> (expected goals scored) and
+      <code>xGC</code> (expected goals conceded).
     </p>
   </header>
 
+  <nav class="tabs" role="tablist" aria-label="Dashboard sections">
+    <button role="tab" id="tab-next" data-tab="next" aria-controls="panel-next">Next GW</button>
+    <button role="tab" id="tab-chips" data-tab="chips" aria-controls="panel-chips">Chip Planner</button>
+    <button role="tab" id="tab-tickers" data-tab="tickers" aria-controls="panel-tickers">Tickers</button>
+    <button role="tab" id="tab-table" data-tab="table" aria-controls="panel-table">Table</button>
+    <button role="tab" id="tab-split" data-tab="split" aria-controls="panel-split">Home / Away</button>
+  </nav>
+
+  <div class="panel" id="panel-table" data-panel="table" role="tabpanel" aria-labelledby="tab-table">
+  <section class="block">
+  <div class="section-head">
+    <h2>xG League Table</h2>
+    <p class="section-note">Actual results next to underlying quality, season to date. Click a heading to sort.</p>
+  </div>
   <div class="legend">
     <span><span class="swatch" style="background:var(--gold-tint)"></span>Points</span>
     <span><span class="swatch" style="background:var(--pitch-strong)"></span>Ahead of underlying numbers (xGD)</span>
@@ -414,7 +646,10 @@
       <tbody id="tbody"></tbody>
     </table>
   </div>
+  </section>
+  </div>
 
+  <div class="panel" id="panel-split" data-panel="split" role="tabpanel" aria-labelledby="tab-split" hidden>
   <section class="block">
     <div class="section-head">
       <h2>Home / Away Split</h2>
@@ -453,20 +688,37 @@
       </table>
     </div>
   </section>
+  </div>
+
+  <div class="panel" id="panel-tickers" data-panel="tickers" role="tabpanel" aria-labelledby="tab-tickers" hidden>
+  <div class="mode-bar">
+    <div class="seg" role="group" aria-label="Colour the tickers by">
+      <button type="button" data-tmode="opp" aria-pressed="true">Opponent only</button>
+      <button type="button" data-tmode="combo" aria-pressed="false">Combo: both teams</button>
+    </div>
+    <p class="mode-note" data-tview="opp">
+      Cells show how easy the <strong>opponent</strong> is at that venue.
+      Team names show the team's own season strength.
+    </p>
+    <p class="mode-note" data-tview="combo" hidden>
+      Cells add the <strong>team's own</strong> home/away strength to the
+      opponent's: green vs green (10) is best, red vs red (2) worst.
+    </p>
+    <details class="how">
+      <summary>How the colours work</summary>
+      <ul>
+        <li><strong>Opponent only</strong>: the opponent's rate at that venue (xGC/M it concedes for attack, xG/M it creates for defence), ranked against the other 19 teams into bands, green easiest. <strong>Total</strong> adds the band numbers: lower is an easier run.</li>
+        <li><strong>Combo</strong>: the team's own rate at that venue is banded too, green worth 5 down to red 1, and the two add up. <strong>Sum</strong> adds the combos over the gameweeks shown: higher is a better run.</li>
+      </ul>
+    </details>
+  </div>
 
   <section class="block">
     <div class="section-head">
       <h2>Attacking Fixture Ticker</h2>
-      <p class="section-note">
-        For picking attackers/midfielders. Each cell is colored by how leaky
-        that opponent's defense is <em>at that venue</em> (xGC per match)
-        &mdash; ranked against the other 19 teams and split into bands, green
-        (easiest) through red (hardest). A row that opens green has the
-        easiest run of fixtures to <strong>score against</strong>. The team
-        name is colored by that team's own attack (season xG per match), green
-        for the strongest.
-      </p>
+      <p class="section-note">For attackers and captains: where the goals are.</p>
     </div>
+    <div class="tview" data-tview="opp">
     <div class="legend" id="tier-legend-atk"></div>
     <div class="controls">
       <div class="control">
@@ -492,26 +744,44 @@
       </div>
     </div>
     <div class="table-wrap">
-      <table class="ticker-table" id="ticker-table-atk">
+      <table class="ticker-table grid-table" id="ticker-table-atk">
         <thead><tr id="ticker-head-atk"></tr></thead>
         <tbody id="ticker-tbody-atk"></tbody>
       </table>
+    </div>
+    </div>
+    <div class="tview" data-tview="combo" hidden>
+      <div class="legend combo-legend"></div>
+      <div class="controls">
+        <div class="control">
+          <label for="combo-start-atk">From gameweek</label>
+          <select id="combo-start-atk"></select>
+        </div>
+        <div class="control">
+          <label for="combo-span-atk">Gameweeks shown</label>
+          <select id="combo-span-atk">
+            <option value="3">3</option>
+            <option value="5" selected>5</option>
+            <option value="8">8</option>
+            <option value="10">10</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="ticker-table combo-table grid-table" id="combo-tbl-atk">
+          <thead><tr id="combo-head-atk"></tr></thead>
+          <tbody id="combo-tbody-atk"></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
   <section class="block">
     <div class="section-head">
       <h2>Defensive Fixture Ticker</h2>
-      <p class="section-note">
-        For picking defenders/goalkeepers. Each cell is colored by how
-        <em>weak</em> that opponent's attack is at that venue (xG per match)
-        &mdash; ranked against the other 19 teams and split into bands, green
-        (easiest) through red (hardest). A row that opens green has the
-        easiest run of fixtures for a <strong>clean sheet</strong>. The team
-        name is colored by that team's own defense (season xGC per match),
-        green for the meanest.
-      </p>
+      <p class="section-note">For defenders and keepers: where the clean sheets are.</p>
     </div>
+    <div class="tview" data-tview="opp">
     <div class="legend" id="tier-legend-def"></div>
     <div class="controls">
       <div class="control">
@@ -537,12 +807,110 @@
       </div>
     </div>
     <div class="table-wrap">
-      <table class="ticker-table" id="ticker-table-def">
+      <table class="ticker-table grid-table" id="ticker-table-def">
         <thead><tr id="ticker-head-def"></tr></thead>
         <tbody id="ticker-tbody-def"></tbody>
       </table>
     </div>
+    </div>
+    <div class="tview" data-tview="combo" hidden>
+      <div class="legend combo-legend"></div>
+      <div class="controls">
+        <div class="control">
+          <label for="combo-start-def">From gameweek</label>
+          <select id="combo-start-def"></select>
+        </div>
+        <div class="control">
+          <label for="combo-span-def">Gameweeks shown</label>
+          <select id="combo-span-def">
+            <option value="3">3</option>
+            <option value="5" selected>5</option>
+            <option value="8">8</option>
+            <option value="10">10</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="ticker-table combo-table grid-table" id="combo-tbl-def">
+          <thead><tr id="combo-head-def"></tr></thead>
+          <tbody id="combo-tbody-def"></tbody>
+        </table>
+      </div>
+    </div>
   </section>
+  </div>
+
+  <div class="panel" id="panel-next" data-panel="next" role="tabpanel" aria-labelledby="tab-next" hidden>
+  <section class="block">
+    <div class="section-head">
+      <h2><span id="next-title">Next Gameweek</span> <span id="next-gw-label"></span></h2>
+      <p class="section-note">
+        Each team's colour vs its opponent's, both at that venue.
+        <strong>Green vs green</strong> is the best combo (10),
+        <strong>red vs red</strong> the worst (2).
+      </p>
+    </div>
+    <details class="how">
+      <summary>How it's scored</summary>
+      <ul>
+        <li><strong>Attack</strong> (attackers, captain): team's xG per match vs the opponent's xGC per match.</li>
+        <li><strong>Defence</strong> (defenders, keepers): team's xGC per match vs the opponent's xG per match.</li>
+        <li>All home/away rates, ranked against the other 19 teams into the ticker's 5 colours. Green is worth 5, red 1; a combo adds both sides.</li>
+      </ul>
+    </details>
+    <div class="controls">
+      <div class="control">
+        <label for="next-gw-pick">Gameweek</label>
+        <select id="next-gw-pick"></select>
+      </div>
+    </div>
+    <div class="picks" id="next-picks">
+      <div class="pick-card" title="Teams with the best attack combos this gameweek">
+        <span class="pick-label">Captain picks</span>
+        <span class="pick-list" id="picks-atk"></span>
+      </div>
+      <div class="pick-card" title="Teams with the best defence combos this gameweek">
+        <span class="pick-label">Clean-sheet picks</span>
+        <span class="pick-list" id="picks-def"></span>
+      </div>
+    </div>
+    <div class="legend combo-legend"></div>
+    <div class="table-wrap">
+      <table class="ticker-table combo-table" id="next-tbl">
+        <thead><tr id="next-head"></tr></thead>
+        <tbody id="next-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+  </div>
+
+  <div class="panel" id="panel-chips" data-panel="chips" role="tabpanel" aria-labelledby="tab-chips" hidden>
+  <section class="block">
+    <div class="section-head">
+      <h2>Chip Planner <span id="chips-range-label"></span></h2>
+      <p class="section-note">
+        Gameweeks ranked by their combos, doubles included.
+        First-half chips have to be used by GW19.
+      </p>
+    </div>
+    <details class="how">
+      <summary>How it's scored</summary>
+      <ul>
+        <li>Built from the same combos as Next GW (10 = green vs green).</li>
+        <li><strong>GW score</strong> adds up how far each team's week beats one even game (6). A double counts both games, so doubles jump up; blanks add nothing.</li>
+        <li>High <strong>Attack</strong>: Triple Captain. High <strong>Total</strong>: Bench Boost. Few fixtures: Free Hit.</li>
+      </ul>
+    </details>
+    <div class="table-wrap">
+      <table class="combo-table" id="gw-rank">
+        <thead><tr id="gw-rank-head"></tr></thead>
+        <tbody id="gw-rank-tbody"></tbody>
+      </table>
+    </div>
+
+    <a class="goto" href="#tickers" data-goto-combo>Every team, every gameweek: Tickers &rarr; Combo</a>
+  </section>
+  </div>
 
   <footer>
     <span>Source: Understat (xG, xGC) &middot; goals and points computed from Understat match results, cross-checked against the FPL API.</span>
@@ -874,7 +1242,7 @@
           }).join("");
           return `<td class="fx-cell"><div class="fx-double">${pills}</div></td>`;
         }).join("");
-        return `<tr><td class="team-col ${ownBand[short]}" title="${ownLabel}: ${fmt(ownValueByTeam[short])}">${TEAM_SHORT_TO_FULL[short]}</td><td class="own-col">${ownValueByTeam[short].toFixed(2)}</td><td class="total-col">${totals[short]}</td>${cells}</tr>`;
+        return `<tr><td class="team-col ${ownBand[short]}" title="${ownLabel}: ${fmt(ownValueByTeam[short])}"><span class="name-full">${TEAM_SHORT_TO_FULL[short]}</span><span class="name-short">${short}</span></td><td class="own-col">${ownValueByTeam[short].toFixed(2)}</td><td class="total-col">${totals[short]}</td>${cells}</tr>`;
       }).join("");
     }
 
@@ -886,6 +1254,413 @@
   const OWN_XGC = Object.fromEntries(DATA.map(r => [r.short, r.xGCPerMatch]));
   setupTicker("atk", XGC_BY_TEAM, false, OWN_XG, "Season xG per match", "xG/M");
   setupTicker("def", XG_BY_TEAM, true, OWN_XGC, "Season xGC per match", "xGC/M");
+
+  // ---------------------------------------------------------------------
+  // Versus combos: Next GW and Chip Planner
+  // ---------------------------------------------------------------------
+  // A combo pairs a team's own colour with its opponent's, both at that
+  // fixture's venue and banded exactly like the tickers (5 colours, ranked
+  // against all 20 teams' home or away rates). Attack: own xG/M vs the
+  // opponent's xGC/M, higher is greener on both. Defence: own xGC/M vs the
+  // opponent's xG/M, lower is greener on both. Green is worth 5 down to
+  // red 1, so a combo scores 2 (red vs red) to 10 (green vs green).
+  const COMBO_K = 5;
+  const EVEN_COMBO = COMBO_K + 1; // middling vs middling
+  const COMBO_PALETTE = PALETTES[COMBO_K];
+  const COLOUR_POINTS = Object.fromEntries(COMBO_PALETTE.map((t, i) => [t.cls, COMBO_K - i]));
+  const COLOUR_NAME = {
+    "tier-easy": "green", "tier-lightgreen": "light green", "tier-mid": "amber",
+    "tier-lightred": "orange", "tier-hard": "red",
+  };
+  const MODES = {
+    atk: {
+      name: "attack",
+      own: computeBands(COMBO_K, XG_BY_TEAM, false), ownVals: XG_BY_TEAM, ownStat: "xG/M",
+      opp: computeBands(COMBO_K, XGC_BY_TEAM, false), oppVals: XGC_BY_TEAM, oppStat: "xGC/M",
+    },
+    def: {
+      name: "defence",
+      own: computeBands(COMBO_K, XGC_BY_TEAM, true), ownVals: XGC_BY_TEAM, ownStat: "xGC/M",
+      opp: computeBands(COMBO_K, XG_BY_TEAM, true), oppVals: XG_BY_TEAM, oppStat: "xG/M",
+    },
+  };
+  const esc = v => String(v).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  const sumScores = cs => cs.reduce((acc, c) => acc + c.score, 0);
+
+  function combo(mode, short, f) {
+    const m = MODES[mode];
+    const ownSide = f.venue === "H" ? "home" : "away";
+    const oppSide = f.venue === "H" ? "away" : "home";
+    const ownTier = m.own[ownSide + "Band"][short];
+    const oppTier = m.opp[oppSide + "Band"][f.opp];
+    const score = COLOUR_POINTS[ownTier] + COLOUR_POINTS[oppTier];
+    const info =
+      `${TEAM_SHORT_TO_FULL[short]} ${m.name} (${ownSide}) vs ${TEAM_SHORT_TO_FULL[f.opp]}: ` +
+      `${m.ownVals[short][ownSide].toFixed(2)} ${m.ownStat} (${COLOUR_NAME[ownTier]}) vs ` +
+      `${m.oppVals[f.opp][oppSide].toFixed(2)} ${m.oppStat} (${COLOUR_NAME[oppTier]}) = ${score}/10`;
+    return { opp: f.opp, venue: f.venue, ownTier, oppTier, score, info };
+  }
+
+  // Cell colour by combo score: 9-10, 7-8, 6, 4-5, 2-3.
+  const SCORE_LEGEND = ["9&ndash;10", "7&ndash;8", "6", "4&ndash;5", "2&ndash;3"];
+  function scoreTier(score) {
+    const i = score >= 9 ? 0 : score >= 7 ? 1 : score === EVEN_COMBO ? 2 : score >= 4 ? 3 : 4;
+    return COMBO_PALETTE[i].cls;
+  }
+  document.querySelectorAll(".combo-legend").forEach(el => {
+    el.innerHTML =
+      `<span><span class="dots"><i class="dot tier-easy"></i><i class="dot tier-hard"></i></span>team vs opponent</span>` +
+      COMBO_PALETTE.map((t, i) =>
+        `<span><span class="swatch" style="background:var(--${t.cls}-bg)"></span>${SCORE_LEGEND[i]}</span>`
+      ).join("") +
+      `<span class="hint">Tap a score for details</span>`;
+  });
+
+  function comboPill(c, withOpp) {
+    return `<div class="fx-pill combo ${scoreTier(c.score)}" tabindex="0" title="${esc(c.info)}" data-info="${esc(c.info)}">` +
+      (withOpp ? `<span>${c.opp}<span class="venue"> ${c.venue}</span></span>` : "") +
+      `<span class="combo-line"><span class="dots"><i class="dot ${c.ownTier}"></i><i class="dot ${c.oppTier}"></i></span><b>${c.score}</b></span></div>`;
+  }
+  function comboCell(combos, withOpp) {
+    if (combos.length === 0) return `<td class="fx-cell"><div class="fx-pill blank">&mdash;</div></td>`;
+    return `<td class="fx-cell"><div class="fx-double">${combos.map(c => comboPill(c, withOpp)).join("")}</div></td>`;
+  }
+
+  // Tapping (or Enter on) a combo pops its breakdown up at the bottom of
+  // the screen -- hover titles don't exist on phones, and a line under a
+  // long table would be off-screen. Tap the popup (or wait) to close it.
+  const toast = document.getElementById("toast");
+  let toastTimer;
+  function showToast(text) {
+    toast.textContent = text;
+    toast.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.hidden = true; }, 7000);
+  }
+  toast.addEventListener("click", () => { toast.hidden = true; });
+  function wireInfo(elId) {
+    const table = document.getElementById(elId);
+    const show = target => {
+      const pill = target.closest("[data-info]");
+      if (pill) showToast(pill.dataset.info);
+    };
+    table.addEventListener("click", e => show(e.target));
+    table.addEventListener("keydown", e => {
+      if ((e.key === "Enter" || e.key === " ") && e.target.closest("[data-info]")) {
+        e.preventDefault();
+        show(e.target);
+      }
+    });
+  }
+
+  // Header row for a sortable combo table. cols: [{key?, label, title?, left?}];
+  // columns without a key aren't sortable.
+  function renderHead(headEl, cols, state) {
+    headEl.innerHTML = cols.map(c => {
+      const style = c.left ? ' style="text-align:left"' : "";
+      return c.key
+        ? `<th data-key="${c.key}" tabindex="0" aria-sort="${state.key === c.key ? state.dir : "none"}" title="${esc(c.title || "")}"${style}>${c.label}<span class="arrow">&#8645;</span></th>`
+        : `<th title="${esc(c.title || "")}" style="cursor:default${c.left ? ";text-align:left" : ""}">${c.label}</th>`;
+    }).join("");
+  }
+  function wireSort(headEl, state, firstDir, render) {
+    const activate = key => {
+      if (state.key === key) {
+        state.dir = state.dir === "descending" ? "ascending" : "descending";
+      } else {
+        state.key = key;
+        state.dir = firstDir[key] || "descending";
+      }
+      render();
+    };
+    headEl.addEventListener("click", e => {
+      const th = e.target.closest("th[data-key]");
+      if (th) activate(th.dataset.key);
+    });
+    headEl.addEventListener("keydown", e => {
+      const th = e.target.closest("th[data-key]");
+      if (th && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault();
+        activate(th.dataset.key);
+        headEl.querySelector(`th[data-key="${th.dataset.key}"]`).focus(); // header was re-rendered
+      }
+    });
+  }
+  const byTeamName = (a, b) => TEAM_SHORT_TO_FULL[a].localeCompare(TEAM_SHORT_TO_FULL[b]);
+  const NEXT_GW = ALL_GWS[0];
+  // Next GW's picker and the Chip Planner cover gameweeks up to GW19
+  // (first-half chips), or to the end of the season once past it.
+  const PLAN_GWS = NEXT_GW === undefined ? [] : ALL_GWS.filter(g => g <= (NEXT_GW <= 19 ? 19 : 38));
+
+  // A gameweek where some team plays twice is a double; one where some
+  // team doesn't play is a blank. A week can be both.
+  const GW_SHAPE = Object.fromEntries(ALL_GWS.map(g => {
+    const games = ALL_SHORTS.map(s => FIXTURES_BY_TEAM[s].filter(f => f.gw === g).length);
+    return [g, { double: games.some(n => n > 1), blank: games.some(n => n === 0) }];
+  }));
+  const gwBadges = g =>
+    (GW_SHAPE[g].double ? `<span class="badge" title="Some teams play twice">Double</span>` : "") +
+    (GW_SHAPE[g].blank ? `<span class="badge blank" title="Some teams don't play">Blank</span>` : "");
+  const gwShapeText = g =>
+    [GW_SHAPE[g].double && "double", GW_SHAPE[g].blank && "blank"].filter(Boolean).join(" + ");
+
+  // --- Next gameweek (or any up to GW19, via the picker): one ticker
+  // column, scored as combos.
+  (function setupNext() {
+    const headEl = document.getElementById("next-head");
+    const bodyEl = document.getElementById("next-tbody");
+    const pick = document.getElementById("next-gw-pick");
+    if (NEXT_GW === undefined) {
+      bodyEl.innerHTML = `<tr><td>No fixtures left this season.</td></tr>`;
+      return;
+    }
+    pick.innerHTML = PLAN_GWS.map(g => {
+      const tags = [g === NEXT_GW && "next", gwShapeText(g)].filter(Boolean).join(", ");
+      return `<option value="${g}">GW ${g}${tags ? ` (${tags})` : ""}</option>`;
+    }).join("");
+    let rows = [];
+    function load() {
+      const gw = Number(pick.value);
+      document.getElementById("next-title").textContent = gw === NEXT_GW ? "Next Gameweek" : "Gameweek";
+      document.getElementById("next-gw-label").innerHTML = `· GW ${gw}${gwBadges(gw)}`;
+      rows = ALL_SHORTS.map(short => {
+        const fx = FIXTURES_BY_TEAM[short].filter(f => f.gw === gw);
+        const atk = fx.map(f => combo("atk", short, f));
+        const def = fx.map(f => combo("def", short, f));
+        return { short, fx, atk, def, atkScore: sumScores(atk), defScore: sumScores(def) };
+      });
+      renderPicks("picks-atk", "atk");
+      renderPicks("picks-def", "def");
+    }
+    // The 3 best teams by attack (captain) or defence (clean sheet) combo,
+    // coloured like a combo cell; a double shows both opponents.
+    function renderPicks(elId, mode) {
+      const top = rows
+        .filter(r => r.fx.length)
+        .sort((a, b) => b[mode + "Score"] - a[mode + "Score"] || byTeamName(a.short, b.short))
+        .slice(0, 3);
+      document.getElementById(elId).innerHTML = top.map(r => {
+        const combos = r[mode];
+        const score = r[mode + "Score"];
+        // Written as the fixture reads, home team first, the picked team in bold.
+        const fixtures = combos.map(c => c.venue === "H"
+          ? `<b>${r.short}</b> <span class="v">v</span> ${c.opp}`
+          : `${c.opp} <span class="v">v</span> <b>${r.short}</b>`
+        ).join(` <span class="v">+</span> `);
+        const info = esc(combos.map(c => c.info).join("\n"));
+        return `<span class="pick ${scoreTier(Math.round(score / combos.length))}" tabindex="0" title="${info}" data-info="${info}">` +
+          `<span class="fixture">${fixtures}</span><span class="pick-score">${score}</span></span>`;
+      }).join("");
+    }
+    const cols = [
+      { key: "team", label: "Team", left: true },
+      { key: "atk", label: "Attack", title: "Team xG/M vs opponent xGC/M at that venue. 10 = green vs green" },
+      { key: "def", label: "Defence", title: "Team xGC/M vs opponent xG/M at that venue. 10 = green vs green" },
+    ];
+    const state = { key: "atk", dir: "descending" };
+    function render() {
+      renderHead(headEl, cols, state);
+      const sorted = [...rows].sort((a, b) => {
+        const cmp = state.key === "team" ? byTeamName(a.short, b.short)
+          : state.key === "atk" ? a.atkScore - b.atkScore : a.defScore - b.defScore;
+        return (state.dir === "ascending" ? cmp : -cmp) || byTeamName(a.short, b.short);
+      });
+      bodyEl.innerHTML = sorted.map(r => {
+        const vs = r.fx.length === 0 ? "no game" : r.fx.map(f => `vs ${f.opp} (${f.venue})`).join(" + ");
+        return `<tr><td class="team-col">${TEAM_SHORT_TO_FULL[r.short]}<span class="vs">${vs}</span></td>${comboCell(r.atk, false)}${comboCell(r.def, false)}</tr>`;
+      }).join("");
+    }
+    wireSort(headEl, state, { team: "ascending" }, render);
+    wireInfo("next-tbl");
+    wireInfo("next-picks");
+    pick.addEventListener("change", () => { load(); render(); });
+    load();
+    render();
+  })();
+
+  // --- Chip planner over PLAN_GWS.
+  (function setupChips() {
+    if (NEXT_GW === undefined) return;
+    const gws = PLAN_GWS;
+    document.getElementById("chips-range-label").textContent =
+      gws.length > 1 ? `· GW ${gws[0]}–${gws[gws.length - 1]}` : `· GW ${gws[0]}`;
+
+    // combos[mode][team][gw] -> that team's combos in that gameweek
+    const combos = {};
+    for (const mode of ["atk", "def"]) {
+      combos[mode] = Object.fromEntries(ALL_SHORTS.map(short => [short, Object.fromEntries(gws.map(g => [
+        g, FIXTURES_BY_TEAM[short].filter(f => f.gw === g).map(f => combo(mode, short, f)),
+      ]))]));
+    }
+
+    // GW score: how far each team's week beats a single even game (6),
+    // added up over teams. Weeks below that add nothing, so green-vs-green
+    // mismatches lift a gameweek more than strong meeting strong; a double
+    // counts both games (two middling games already beat one even one) and
+    // a blank adds nothing.
+    const edge = cs => Math.max(0, sumScores(cs) - EVEN_COMBO);
+    const gwRows = gws.map(g => {
+      const r = {
+        gw: g,
+        fixtures: ALL_SHORTS.reduce((n, s) => n + FIXTURES_BY_TEAM[s].filter(f => f.gw === g && f.venue === "H").length, 0),
+      };
+      for (const mode of ["atk", "def"]) {
+        r[mode] = ALL_SHORTS.reduce((acc, s) => acc + edge(combos[mode][s][g]), 0);
+        r[mode + "Best"] = ALL_SHORTS
+          .map(s => ({ s, v: sumScores(combos[mode][s][g]) }))
+          .filter(x => x.v > 0)
+          .sort((a, b) => b.v - a.v || a.s.localeCompare(b.s))
+          .slice(0, 3);
+      }
+      r.total = r.atk + r.def;
+      return r;
+    });
+    gwRows.forEach(r => { r.rank = 1 + gwRows.filter(o => o.total > r.total).length; });
+    const maxTotal = Math.max(1, ...gwRows.map(r => r.total));
+    const bestList = list => list.map(x => `${x.s} ${x.v}`).join(" · ");
+
+    const rankHead = document.getElementById("gw-rank-head");
+    const rankBody = document.getElementById("gw-rank-tbody");
+    const rankCols = [
+      { key: "rank", label: "#", left: true, title: "Rank by Total" },
+      { key: "gw", label: "GW" },
+      { key: "total", label: "Total", title: "Attack + Defence" },
+      { key: "atk", label: "Atk", title: "How far each team's attack week beats one even game (6), added up" },
+      { key: "def", label: "Def", title: "How far each team's defence week beats one even game (6), added up" },
+      { label: "Best attack", title: "Top 3 teams by attack combo that week" },
+      { label: "Best defence", title: "Top 3 teams by defence combo that week" },
+      { key: "fixtures", label: "Fixt.", title: "Fixtures that week. 10 is normal; fewer = blank, more = double" },
+    ];
+    const rankState = { key: "rank", dir: "ascending" };
+    function renderRank() {
+      renderHead(rankHead, rankCols, rankState);
+      const sorted = [...gwRows].sort((a, b) => {
+        const cmp = a[rankState.key] - b[rankState.key];
+        return (rankState.dir === "ascending" ? cmp : -cmp) || a.gw - b.gw;
+      });
+      rankBody.innerHTML = sorted.map(r => `
+        <tr class="${r.rank === 1 ? "top" : ""}">
+          <td>${r.rank}</td>
+          <td>${r.gw}${gwBadges(r.gw)}</td>
+          <td><span class="bar" style="width:${Math.round((40 * r.total) / maxTotal)}px"></span>${r.total}</td>
+          <td>${r.atk}</td>
+          <td>${r.def}</td>
+          <td class="best-list">${bestList(r.atkBest)}</td>
+          <td class="best-list">${bestList(r.defBest)}</td>
+          <td>${r.fixtures}</td>
+        </tr>`).join("");
+    }
+    wireSort(rankHead, rankState, { rank: "ascending", gw: "ascending" }, renderRank);
+    renderRank();
+
+  })();
+
+  // --- Combo view of the tickers: every team's combos, scored like Next GW,
+  // over the gameweeks picked (same controls as the opponent-only ticker).
+  // Sum adds a team's combos: higher is a better run.
+  function setupComboGrid(mode) {
+    const headEl = document.getElementById(`combo-head-${mode}`);
+    const bodyEl = document.getElementById(`combo-tbody-${mode}`);
+    const ctlStart = document.getElementById(`combo-start-${mode}`);
+    const ctlSpan = document.getElementById(`combo-span-${mode}`);
+    ctlStart.innerHTML = ALL_GWS.map(g => `<option value="${g}">GW ${g}</option>`).join("");
+    const cells = Object.fromEntries(ALL_SHORTS.map(s => [s, Object.fromEntries(ALL_GWS.map(g => [
+      g, FIXTURES_BY_TEAM[s].filter(f => f.gw === g).map(f => combo(mode, s, f)),
+    ]))]));
+    const state = { key: "sum", dir: "descending" };
+    function render() {
+      const start = Number(ctlStart.value);
+      const gws = ALL_GWS.filter(g => g >= start).slice(0, Number(ctlSpan.value));
+      const sums = Object.fromEntries(ALL_SHORTS.map(s => [s, gws.reduce((acc, g) => acc + sumScores(cells[s][g]), 0)]));
+      const cols = [
+        { key: "team", label: "Team", left: true },
+        { key: "sum", label: "Sum", title: "Combo scores added up over these gameweeks: higher is a better run" },
+        ...gws.map(g => ({ label: `GW ${g}${gwBadges(g)}` })),
+      ];
+      renderHead(headEl, cols, state);
+      const sorted = [...ALL_SHORTS].sort((a, b) => {
+        const cmp = state.key === "team" ? byTeamName(a, b) : sums[a] - sums[b];
+        return (state.dir === "ascending" ? cmp : -cmp) || byTeamName(a, b);
+      });
+      bodyEl.innerHTML = sorted.map(s =>
+        `<tr><td class="team-col"><span class="name-full">${TEAM_SHORT_TO_FULL[s]}</span><span class="name-short">${s}</span></td><td class="total-col">${sums[s]}</td>` +
+        gws.map(g => comboCell(cells[s][g], true)).join("") + `</tr>`
+      ).join("");
+    }
+    [ctlStart, ctlSpan].forEach(el => el.addEventListener("change", render));
+    wireSort(headEl, state, { team: "ascending" }, render);
+    wireInfo(`combo-tbl-${mode}`);
+    render();
+  }
+  if (NEXT_GW !== undefined) {
+    setupComboGrid("atk");
+    setupComboGrid("def");
+  }
+
+  // Tickers' "Opponent only" / "Combo" switch, remembered per browser.
+  const TMODE_BUTTONS = [...document.querySelectorAll("[data-tmode]")];
+  function setTickerMode(m) {
+    TMODE_BUTTONS.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.tmode === m)));
+    document.querySelectorAll("[data-tview]").forEach(el => { el.hidden = el.dataset.tview !== m; });
+    toast.hidden = true;
+    try { localStorage.setItem("fpl-ticker-mode", m); } catch (e) {}
+  }
+  TMODE_BUTTONS.forEach(b => b.addEventListener("click", () => setTickerMode(b.dataset.tmode)));
+  let savedTickerMode = "opp";
+  try { savedTickerMode = localStorage.getItem("fpl-ticker-mode") || "opp"; } catch (e) {}
+  setTickerMode(savedTickerMode === "combo" ? "combo" : "opp");
+
+  // ---------------------------------------------------------------------
+  // Tabs: opens on Next GW, then remembers the last one per browser;
+  // #chips, #table etc. links work too.
+  // ---------------------------------------------------------------------
+  const TAB_BUTTONS = [...document.querySelectorAll('.tabs [role="tab"]')];
+  function showTab(id) {
+    if (!TAB_BUTTONS.some(b => b.dataset.tab === id)) id = "next";
+    TAB_BUTTONS.forEach(b => {
+      const on = b.dataset.tab === id;
+      b.setAttribute("aria-selected", String(on));
+      b.tabIndex = on ? 0 : -1;
+    });
+    document.querySelectorAll("[data-panel]").forEach(p => { p.hidden = p.dataset.panel !== id; });
+    toast.hidden = true;
+    try { localStorage.setItem("fpl-tab", id); } catch (e) {}
+    try { history.replaceState(null, "", "#" + id); } catch (e) {}
+    const active = TAB_BUTTONS.find(b => b.dataset.tab === id);
+    const nav = active.parentElement;
+    nav.scrollLeft = active.offsetLeft - (nav.clientWidth - active.offsetWidth) / 2;
+  }
+  // Picking a tab while scrolled down (the tab bar is pinned) starts the
+  // new tab at its top rather than somewhere in its middle.
+  function scrollToTabs() {
+    // The pinned bar's own position reads 0 while stuck, so measure from
+    // the header just above it.
+    const top = document.querySelector("header").getBoundingClientRect().bottom + window.scrollY;
+    if (window.scrollY > top) window.scrollTo({ top });
+  }
+  TAB_BUTTONS.forEach((b, i) => {
+    b.addEventListener("click", () => { showTab(b.dataset.tab); scrollToTabs(); });
+    b.addEventListener("keydown", e => {
+      const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+      if (!step) return;
+      const next = TAB_BUTTONS[(i + step + TAB_BUTTONS.length) % TAB_BUTTONS.length];
+      showTab(next.dataset.tab);
+      next.focus();
+    });
+  });
+  let initialTab = location.hash.slice(1);
+  if (!initialTab) {
+    try { initialTab = localStorage.getItem("fpl-tab") || ""; } catch (e) {}
+  }
+  showTab(initialTab);
+
+  // Chip Planner's link straight to the combo tickers.
+  document.querySelector("[data-goto-combo]").addEventListener("click", e => {
+    e.preventDefault();
+    setTickerMode("combo");
+    showTab("tickers");
+    scrollToTabs();
+  });
 
   // ---------------------------------------------------------------------
   // Stale-data warning. Filled in at build time with when the next
