@@ -2,7 +2,7 @@
 
 This is the one source that correctly reflects blank gameweeks (a team
 absent from an `event`) and double gameweeks (a team appearing twice in
-one `event`) -- Understat's match dates carry no gameweek number.
+one `event`).
 """
 from __future__ import annotations
 

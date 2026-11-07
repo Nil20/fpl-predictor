@@ -1,6 +1,6 @@
 """Client for Understat's undocumented league-data endpoint.
 
-Primary source for team and player xG/xA/xGC: `teams[id].history` is
+Source of team xG/xGC when config.XG_SOURCE is "understat": `teams[id].history` is
 already at team level (h_a, xG, xGA, scored, missed, date per match), so
 there's no per-player aggregation or transfer-misattribution risk the way
 there is deriving this from the FPL API.

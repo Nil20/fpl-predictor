@@ -3,11 +3,16 @@ name: Deploy to Vercel
 on:
   push:
     branches: [master]
-  # Every 3 hours: redeploy once a new gameweek has finished and Understat
-  # has caught up with it (see `python -m fpl_predictor check`).
+  # Every 3 hours: redeploy once a new gameweek has finished and its
+  # results are in (see `python -m fpl_predictor check`).
   schedule:
     - cron: "17 */3 * * *"
   workflow_dispatch:
+
+env:
+  # "fpl" or "understat"; set the repository variable to flip the xG source
+  # (unset means fpl, see fpl_predictor/config.py).
+  XG_SOURCE: ${{ vars.XG_SOURCE }}
 
 jobs:
   check:

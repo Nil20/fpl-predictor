@@ -1,12 +1,15 @@
 """Command-line entrypoint: `python -m fpl_predictor refresh` (or `build`).
 
-refresh -- re-fetch from Understat + FPL (ignoring any cache) and regenerate
+refresh -- re-fetch live data (ignoring any cache) and regenerate
            output/dashboard.html.
 build   -- regenerate output/dashboard.html from whatever is already cached,
            without hitting the network. Useful for iterating on the template.
 check   -- decide whether the live site needs a redeploy: a newer gameweek
-           has finished and Understat has caught up with it. Prints the
-           reason and writes deploy=true|false to $GITHUB_OUTPUT when set.
+           has finished, FPL has confirmed its results and (when xG comes
+           from Understat) Understat has caught up. Prints the reason and
+           writes deploy=true|false to $GITHUB_OUTPUT when set.
+
+Team xG comes from the FPL API or Understat, per config.XG_SOURCE.
 """
 from __future__ import annotations
 
@@ -19,7 +22,7 @@ from pathlib import Path
 
 import requests
 
-from . import analysis, fpl_client, understat_client
+from . import analysis, config, fpl_client, team_xg, understat_client
 from .fixtures import build_fixtures_by_team
 from .render import render_dashboard
 
@@ -29,7 +32,7 @@ SEASON_LABEL = "2026/27"
 SITE_URL = "https://fpl-predictor-nine.vercel.app"
 # How long after the next gameweek's last kickoff the page starts warning
 # that it's stale. Covers the match itself, FPL confirming bonus points,
-# Understat catching up and a few missed 3-hourly check runs.
+# Understat catching up (when used) and a few missed 3-hourly check runs.
 STALE_GRACE = timedelta(hours=36)
 _LIVE_GW_RE = re.compile(r"after Gameweek (\d+)")
 
@@ -74,33 +77,58 @@ def _live_gameweek() -> int:
 def check() -> bool:
     bootstrap = fpl_client.fetch_bootstrap(refresh=True)
     fpl_fixtures = fpl_client.fetch_fixtures(refresh=True)
-    understat_data = understat_client.fetch_league_data(season=SEASON, refresh=True)
 
     finished_gw = _last_finished_gameweek(bootstrap)
     live_gw = _live_gameweek()
-    fpl_results = sum(f["finished"] for f in fpl_fixtures)
-    understat_results = sum(d["isResult"] for d in understat_data["dates"])
-
     if finished_gw <= live_gw:
         print(f"Live site already shows Gameweek {live_gw}; nothing to do.")
         return False
-    if understat_results < fpl_results:
+
+    # A fixture's `finished` flips once FPL has confirmed its bonus points,
+    # by which time its players' match histories (and xG) are final.
+    unconfirmed = sum(
+        1 for f in fpl_fixtures
+        if f["event"] is not None and f["event"] <= finished_gw and not f["finished"]
+    )
+    if unconfirmed:
         print(
-            f"Gameweek {finished_gw} finished but Understat has {understat_results} "
-            f"of {fpl_results} results; waiting for it to catch up."
+            f"Gameweek {finished_gw} has been played but FPL hasn't confirmed "
+            f"{unconfirmed} of its results yet; waiting."
         )
         return False
+
+    if config.XG_SOURCE == "understat":
+        understat_data = understat_client.fetch_league_data(season=SEASON, refresh=True)
+        fpl_results = sum(f["finished"] for f in fpl_fixtures)
+        understat_results = sum(d["isResult"] for d in understat_data["dates"])
+        if understat_results < fpl_results:
+            print(
+                f"Gameweek {finished_gw} finished but Understat has {understat_results} "
+                f"of {fpl_results} results; waiting for it to catch up."
+            )
+            return False
     print(f"Gameweek {finished_gw} finished (live site shows {live_gw}); redeploying.")
     return True
+
+
+def _team_matches(bootstrap: dict, fpl_fixtures: list[dict], refresh: bool) -> dict[str, list[dict]]:
+    if config.XG_SOURCE == "understat":
+        understat_data = understat_client.fetch_league_data(season=SEASON, refresh=refresh)
+        return team_xg.from_understat(understat_data)
+    histories = fpl_client.fetch_player_histories(bootstrap, refresh=refresh)
+    team_matches, mismatches = team_xg.from_fpl(fpl_fixtures, histories, bootstrap)
+    for m in mismatches:
+        print(f"warning: {m} (that match's xG may be undercounted)", file=sys.stderr)
+    return team_matches
 
 
 def run(refresh: bool) -> Path:
     bootstrap = fpl_client.fetch_bootstrap(refresh=refresh)
     fpl_fixtures = fpl_client.fetch_fixtures(refresh=refresh)
-    understat_data = understat_client.fetch_league_data(season=SEASON, refresh=refresh)
+    team_matches = _team_matches(bootstrap, fpl_fixtures, refresh)
 
-    league_table = analysis.compute_league_table(understat_data, bootstrap)
-    home_away = analysis.compute_home_away_split(understat_data, bootstrap)
+    league_table = analysis.compute_league_table(team_matches, bootstrap)
+    home_away = analysis.compute_home_away_split(team_matches, bootstrap)
     fixtures_by_team = build_fixtures_by_team(fpl_fixtures, bootstrap)
     current_gw = _last_finished_gameweek(bootstrap)
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -113,6 +141,7 @@ def run(refresh: bool) -> Path:
         season_label=SEASON_LABEL,
         generated_at=generated_at,
         stale_check=_stale_check(fpl_fixtures, current_gw),
+        source_note=team_xg.SOURCE_NOTES[config.XG_SOURCE],
     )
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -136,7 +165,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     path = run(refresh=(args.command == "refresh"))
-    print(f"Wrote {path}")
+    print(f"Wrote {path} (xG source: {config.XG_SOURCE})")
     return 0
 
 

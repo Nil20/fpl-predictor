@@ -31,6 +31,7 @@ _ASOF_RE = re.compile(
     re.DOTALL,
 )
 _STALE_RE = re.compile(r"const STALE_CHECK = null;")
+_SOURCE_RE = re.compile(r"<span>Source: [^<]*</span>")
 
 
 def render_dashboard(
@@ -41,6 +42,7 @@ def render_dashboard(
     season_label: str,
     generated_at: str,
     stale_check: dict | None,
+    source_note: str,
 ) -> str:
     html = TEMPLATE_PATH.read_text()
 
@@ -60,6 +62,7 @@ def render_dashboard(
             f'document.getElementById("asof").textContent = "Refreshed {generated_at}";',
         ),
         ("STALE_CHECK", _STALE_RE, f"const STALE_CHECK = {json.dumps(stale_check)};"),
+        ("source", _SOURCE_RE, f"<span>Source: {source_note}</span>"),
     ]
 
     for name, pattern, replacement in substitutions:
