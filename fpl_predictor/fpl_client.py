@@ -22,12 +22,27 @@ _HISTORY_FIELDS = ("fixture", "was_home", "minutes", "expected_goals", "goals_sc
 _WORKERS = 8
 
 
+def _session() -> requests.Session:
+    """Retries rate limits, server errors and dropped connections with
+    backoff (about 30s in all) before giving up."""
+    session = requests.Session()
+    session.headers.update(HEADERS)
+    retry = Retry(
+        total=5,
+        backoff_factor=1,
+        status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=("GET",),
+    )
+    session.mount("https://", HTTPAdapter(max_retries=retry, pool_maxsize=_WORKERS))
+    return session
+
+
 def _cached_get(url: str, cache_name: str, refresh: bool) -> dict:
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     path = CACHE_DIR / cache_name
     if not refresh and path.exists():
         return json.loads(path.read_text())
-    resp = requests.get(url, headers=HEADERS, timeout=20)
+    resp = _session().get(url, timeout=20)
     resp.raise_for_status()
     data = resp.json()
     path.write_text(json.dumps(data))
@@ -43,19 +58,6 @@ def fetch_fixtures(refresh: bool = False) -> list[dict]:
     """Full fixture list, each tagged with an `event` (gameweek) number --
     the only source that correctly reflects blank and double gameweeks."""
     return _cached_get(f"{BASE}/fixtures/", "fpl_fixtures.json", refresh)
-
-
-def _session() -> requests.Session:
-    session = requests.Session()
-    session.headers.update(HEADERS)
-    retry = Retry(
-        total=5,
-        backoff_factor=1,
-        status_forcelist=(429, 500, 502, 503, 504),
-        allowed_methods=("GET",),
-    )
-    session.mount("https://", HTTPAdapter(max_retries=retry, pool_maxsize=_WORKERS))
-    return session
 
 
 def fetch_player_histories(bootstrap: dict, refresh: bool = False) -> dict[str, list[dict]]:

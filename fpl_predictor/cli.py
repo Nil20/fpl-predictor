@@ -7,16 +7,21 @@ build   -- regenerate output/dashboard.html from whatever is already cached,
 check   -- decide whether the live site needs a redeploy: a newer gameweek
            has finished, FPL has confirmed its results and (when xG comes
            from Understat) Understat has caught up. Prints the reason and
-           writes deploy=true|false to $GITHUB_OUTPUT when set.
+           writes deploy=true|false to $GITHUB_OUTPUT when set. If a data
+           source errors, it only exits non-zero (failing the run, which
+           notifies) once the live site has gone stale; until then it
+           just warns, since most outages are over by the next run.
 
 Team xG comes from the FPL API or Understat, per config.XG_SOURCE.
 """
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import sys
+import traceback
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -32,9 +37,10 @@ SEASON_LABEL = "2026/27"
 SITE_URL = "https://fpl-predictor-nine.vercel.app"
 # How long after the next gameweek's last kickoff the page starts warning
 # that it's stale. Covers the match itself, FPL confirming bonus points,
-# Understat catching up (when used) and a few missed 3-hourly check runs.
+# Understat catching up (when used) and a missed twice-daily check run.
 STALE_GRACE = timedelta(hours=36)
 _LIVE_GW_RE = re.compile(r"after Gameweek (\d+)")
+_LIVE_STALE_RE = re.compile(r"const STALE_CHECK = (.*?);")
 
 
 def _last_finished_gameweek(bootstrap: dict) -> int:
@@ -62,16 +68,34 @@ def _stale_check(fpl_fixtures: list[dict], current_gw: int) -> dict | None:
     return {"gw": next_gw, "after": after.strftime("%Y-%m-%dT%H:%M:%SZ")}
 
 
-def _live_gameweek() -> int:
-    """The gameweek the deployed dashboard shows, or 0 if it can't be read
-    (which forces a redeploy)."""
+def _live_page() -> str:
+    """The deployed dashboard's HTML, or "" if it can't be fetched."""
     try:
         resp = requests.get(SITE_URL, timeout=20)
         resp.raise_for_status()
     except requests.RequestException:
-        return 0
-    m = _LIVE_GW_RE.search(resp.text)
+        return ""
+    return resp.text
+
+
+def _live_gameweek(html: str) -> int:
+    """The gameweek the deployed dashboard shows, or 0 if it can't be read
+    (which forces a redeploy)."""
+    m = _LIVE_GW_RE.search(html)
     return int(m.group(1)) if m else 0
+
+
+def _live_stale_after(html: str) -> datetime | None:
+    """When the deployed dashboard starts showing its "out of date" modal,
+    or None if that can't be read off it."""
+    m = _LIVE_STALE_RE.search(html)
+    if not m:
+        return None
+    try:
+        stale = json.loads(m.group(1))
+        return datetime.fromisoformat(stale["after"].replace("Z", "+00:00"))
+    except (ValueError, TypeError, KeyError):
+        return None
 
 
 def check() -> bool:
@@ -79,7 +103,7 @@ def check() -> bool:
     fpl_fixtures = fpl_client.fetch_fixtures(refresh=True)
 
     finished_gw = _last_finished_gameweek(bootstrap)
-    live_gw = _live_gameweek()
+    live_gw = _live_gameweek(_live_page())
     if finished_gw <= live_gw:
         print(f"Live site already shows Gameweek {live_gw}; nothing to do.")
         return False
@@ -149,6 +173,34 @@ def run(refresh: bool) -> Path:
     return OUTPUT_PATH
 
 
+def _set_deploy_output(deploy: bool) -> None:
+    if output := os.environ.get("GITHUB_OUTPUT"):
+        with open(output, "a") as fh:
+            fh.write(f"deploy={str(deploy).lower()}\n")
+
+
+def _check_failed() -> int:
+    """check raised -- almost always a data source being down or changed.
+    Most outages are over by the next run, so only fail the run (which is
+    what sends a notification) once the live site has gone stale, i.e. its
+    visitors are seeing the "out of date" modal. Until then, warn."""
+    traceback.print_exc()
+    stale_after = _live_stale_after(_live_page())
+    if stale_after is not None and datetime.now(timezone.utc) < stale_after:
+        print(
+            "::warning::check failed (traceback above); not failing the run "
+            f"unless it's still failing when the live site goes stale at "
+            f"{stale_after:%Y-%m-%d %H:%M} UTC"
+        )
+        _set_deploy_output(False)
+        return 0
+    if stale_after is None:
+        print("::error::check failed (traceback above) and the live site's stale deadline couldn't be read")
+    else:
+        print("::error::check failed (traceback above) and the live site is out of date")
+    return 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="fpl_predictor")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -158,10 +210,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.command == "check":
-        deploy = check()
-        if output := os.environ.get("GITHUB_OUTPUT"):
-            with open(output, "a") as fh:
-                fh.write(f"deploy={str(deploy).lower()}\n")
+        try:
+            deploy = check()
+        except Exception:
+            return _check_failed()
+        _set_deploy_output(deploy)
         return 0
 
     path = run(refresh=(args.command == "refresh"))
