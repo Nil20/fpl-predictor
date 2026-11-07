@@ -1,4 +1,9 @@
-<title>FPL xG Dashboard</title>
+<title>FPL xG Dashboard &middot; Next GW combos &amp; Chip Planner</title>
+<meta name="description" content="Fantasy Premier League fixture combos for every gameweek and a chip planner that ranks gameweeks, built on expected goals (xG).">
+<meta property="og:type" content="website">
+<meta property="og:title" content="FPL xG Dashboard: Next GW combos &amp; Chip Planner">
+<meta property="og:description" content="Who to captain, where the clean sheets are, and the best gameweeks for your chips, from expected goals (xG).">
+<meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -459,6 +464,60 @@
     vertical-align: middle;
     margin-right: 6px;
   }
+  .picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+  .pick-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    background: var(--paper-raised);
+    border: 1px solid var(--line-strong);
+    border-left: 4px solid var(--pitch);
+    border-radius: 8px;
+  }
+  .pick-label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .pick-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pick {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    padding: 4px 9px;
+    border-radius: 5px;
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 600;
+    font-size: 0.86rem;
+  }
+  .pick .venue { font-size: 0.7rem; font-weight: 500; opacity: 0.85; }
+  .pick:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .pick { cursor: pointer; }
+  .pick.tier-easy { background: var(--tier-easy-bg); color: var(--tier-easy-fg); }
+  .pick.tier-lightgreen { background: var(--tier-lightgreen-bg); color: var(--tier-lightgreen-fg); }
+  .pick.tier-mid { background: var(--tier-mid-bg); color: var(--tier-mid-fg); }
+  .pick.tier-lightred { background: var(--tier-lightred-bg); color: var(--tier-lightred-fg); }
+  .pick.tier-hard { background: var(--tier-hard-bg); color: var(--tier-hard-fg); }
+  .badge {
+    display: inline-block;
+    margin-left: 5px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    vertical-align: middle;
+    background: var(--pitch-tint);
+    color: var(--pitch-strong);
+  }
+  .badge.blank { background: var(--brick-tint); color: var(--brick); }
+  thead .badge { background: var(--gold-tint); color: #2a1f05; }
+  thead .badge.blank { background: var(--brick-tint); color: var(--brick); }
   h3 {
     font-family: "Oswald", sans-serif;
     font-weight: 600;
@@ -484,18 +543,18 @@
     <span class="eyebrow">Premier League &middot; 2026/27 &middot; after Gameweek 2</span>
     <h1>FPL xG Dashboard</h1>
     <p class="subline">
-      Underlying numbers for picking players and timing chips.
-      <code>xG</code> = expected goals scored, <code>xGC</code> = expected
-      goals conceded.
+      Who to captain, where the clean sheets are, and when to play your
+      chips, from <code>xG</code> (expected goals scored) and
+      <code>xGC</code> (expected goals conceded).
     </p>
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Dashboard sections">
-    <button role="tab" id="tab-table" data-tab="table" aria-controls="panel-table">Table</button>
-    <button role="tab" id="tab-split" data-tab="split" aria-controls="panel-split">Home / Away</button>
-    <button role="tab" id="tab-tickers" data-tab="tickers" aria-controls="panel-tickers">Tickers</button>
     <button role="tab" id="tab-next" data-tab="next" aria-controls="panel-next">Next GW</button>
     <button role="tab" id="tab-chips" data-tab="chips" aria-controls="panel-chips">Chip Planner</button>
+    <button role="tab" id="tab-tickers" data-tab="tickers" aria-controls="panel-tickers">Tickers</button>
+    <button role="tab" id="tab-table" data-tab="table" aria-controls="panel-table">Table</button>
+    <button role="tab" id="tab-split" data-tab="split" aria-controls="panel-split">Home / Away</button>
   </nav>
 
   <div class="panel" id="panel-table" data-panel="table" role="tabpanel" aria-labelledby="tab-table">
@@ -689,6 +748,16 @@
       <div class="control">
         <label for="next-gw-pick">Gameweek</label>
         <select id="next-gw-pick"></select>
+      </div>
+    </div>
+    <div class="picks" id="next-picks">
+      <div class="pick-card" title="Teams with the best attack combos this gameweek">
+        <span class="pick-label">Captain picks</span>
+        <span class="pick-list" id="picks-atk"></span>
+      </div>
+      <div class="pick-card" title="Teams with the best defence combos this gameweek">
+        <span class="pick-label">Clean-sheet picks</span>
+        <span class="pick-list" id="picks-def"></span>
       </div>
     </div>
     <div class="legend combo-legend"></div>
@@ -1217,6 +1286,18 @@
   // (first-half chips), or to the end of the season once past it.
   const PLAN_GWS = NEXT_GW === undefined ? [] : ALL_GWS.filter(g => g <= (NEXT_GW <= 19 ? 19 : 38));
 
+  // A gameweek where some team plays twice is a double; one where some
+  // team doesn't play is a blank. A week can be both.
+  const GW_SHAPE = Object.fromEntries(ALL_GWS.map(g => {
+    const games = ALL_SHORTS.map(s => FIXTURES_BY_TEAM[s].filter(f => f.gw === g).length);
+    return [g, { double: games.some(n => n > 1), blank: games.some(n => n === 0) }];
+  }));
+  const gwBadges = g =>
+    (GW_SHAPE[g].double ? `<span class="badge" title="Some teams play twice">Double</span>` : "") +
+    (GW_SHAPE[g].blank ? `<span class="badge blank" title="Some teams don't play">Blank</span>` : "");
+  const gwShapeText = g =>
+    [GW_SHAPE[g].double && "double", GW_SHAPE[g].blank && "blank"].filter(Boolean).join(" + ");
+
   // --- Next gameweek (or any up to GW19, via the picker): one ticker
   // column, scored as combos.
   (function setupNext() {
@@ -1227,12 +1308,15 @@
       bodyEl.innerHTML = `<tr><td>No fixtures left this season.</td></tr>`;
       return;
     }
-    pick.innerHTML = PLAN_GWS.map(g => `<option value="${g}">GW ${g}${g === NEXT_GW ? " (next)" : ""}</option>`).join("");
+    pick.innerHTML = PLAN_GWS.map(g => {
+      const tags = [g === NEXT_GW && "next", gwShapeText(g)].filter(Boolean).join(", ");
+      return `<option value="${g}">GW ${g}${tags ? ` (${tags})` : ""}</option>`;
+    }).join("");
     let rows = [];
     function load() {
       const gw = Number(pick.value);
       document.getElementById("next-title").textContent = gw === NEXT_GW ? "Next Gameweek" : "Gameweek";
-      document.getElementById("next-gw-label").textContent = `· GW ${gw}`;
+      document.getElementById("next-gw-label").innerHTML = `· GW ${gw}${gwBadges(gw)}`;
       document.getElementById("next-info").textContent = "Tap a combo for its breakdown.";
       rows = ALL_SHORTS.map(short => {
         const fx = FIXTURES_BY_TEAM[short].filter(f => f.gw === gw);
@@ -1240,6 +1324,24 @@
         const def = fx.map(f => combo("def", short, f));
         return { short, fx, atk, def, atkScore: sumScores(atk), defScore: sumScores(def) };
       });
+      renderPicks("picks-atk", "atk");
+      renderPicks("picks-def", "def");
+    }
+    // The 3 best teams by attack (captain) or defence (clean sheet) combo,
+    // coloured like a combo cell; a double shows both opponents.
+    function renderPicks(elId, mode) {
+      const top = rows
+        .filter(r => r.fx.length)
+        .sort((a, b) => b[mode + "Score"] - a[mode + "Score"] || byTeamName(a.short, b.short))
+        .slice(0, 3);
+      document.getElementById(elId).innerHTML = top.map(r => {
+        const combos = r[mode];
+        const score = r[mode + "Score"];
+        const opps = combos.map(c => `${c.opp} ${c.venue}`).join(" + ");
+        const info = esc(combos.map(c => c.info).join("\n"));
+        return `<span class="pick ${scoreTier(Math.round(score / combos.length))}" tabindex="0" title="${info}" data-info="${info}">` +
+          `${r.short}<span class="venue">v ${opps}</span>${score}</span>`;
+      }).join("");
     }
     const cols = [
       { key: "team", label: "Team", left: true },
@@ -1261,6 +1363,7 @@
     }
     wireSort(headEl, state, { team: "ascending" }, render);
     wireInfo("next-tbl", "next-info");
+    wireInfo("next-picks", "next-info");
     pick.addEventListener("change", () => { load(); render(); });
     load();
     render();
@@ -1330,7 +1433,7 @@
       rankBody.innerHTML = sorted.map(r => `
         <tr class="${r.rank === 1 ? "top" : ""}">
           <td>${r.rank}</td>
-          <td>${r.gw}</td>
+          <td>${r.gw}${gwBadges(r.gw)}</td>
           <td><span class="bar" style="width:${Math.round((40 * r.total) / maxTotal)}px"></span>${r.total}</td>
           <td>${r.atk}</td>
           <td>${r.def}</td>
@@ -1352,7 +1455,7 @@
       const cols = [
         { key: "team", label: "Team", left: true },
         { key: "sum", label: "Sum", title: "Combo scores added up over these gameweeks" },
-        ...gws.map(g => ({ label: `GW ${g}${topGws.has(g) ? " ★" : ""}`, title: topGws.has(g) ? "Top-ranked gameweek" : "" })),
+        ...gws.map(g => ({ label: `GW ${g}${topGws.has(g) ? " ★" : ""}${gwBadges(g)}`, title: topGws.has(g) ? "Top-ranked gameweek" : "" })),
       ];
       renderHead(gridHead, cols, gridState);
       const sums = Object.fromEntries(ALL_SHORTS.map(s => [s, gws.reduce((acc, g) => acc + sumScores(combos[mode][s][g]), 0)]));
@@ -1377,11 +1480,12 @@
   })();
 
   // ---------------------------------------------------------------------
-  // Tabs: remembered per browser; #table, #next etc. links work too.
+  // Tabs: opens on Next GW, then remembers the last one per browser;
+  // #chips, #table etc. links work too.
   // ---------------------------------------------------------------------
   const TAB_BUTTONS = [...document.querySelectorAll('.tabs [role="tab"]')];
   function showTab(id) {
-    if (!TAB_BUTTONS.some(b => b.dataset.tab === id)) id = "table";
+    if (!TAB_BUTTONS.some(b => b.dataset.tab === id)) id = "next";
     TAB_BUTTONS.forEach(b => {
       const on = b.dataset.tab === id;
       b.setAttribute("aria-selected", String(on));
