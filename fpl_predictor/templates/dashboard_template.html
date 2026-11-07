@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FPL xG Dashboard &middot; Next GW combos &amp; Chip Planner</title>
 <meta name="description" content="Fantasy Premier League fixture combos for every gameweek and a chip planner that ranks gameweeks, built on expected goals (xG).">
 <meta property="og:type" content="website">
@@ -706,7 +708,7 @@
       <summary>How the colours work</summary>
       <ul>
         <li><strong>Opponent only</strong>: the opponent's rate at that venue (xGC/M it concedes for attack, xG/M it creates for defence), ranked against the other 19 teams into bands, green easiest. <strong>Total</strong> adds the band numbers: lower is an easier run.</li>
-        <li><strong>Combo</strong>: the team's own rate at that venue is banded too, green worth 5 down to red 1, and the two add up. <strong>Sum</strong> adds the combos: higher is a better run. Shows gameweeks up to GW19.</li>
+        <li><strong>Combo</strong>: the team's own rate at that venue is banded too, green worth 5 down to red 1, and the two add up. <strong>Sum</strong> adds the combos over the gameweeks shown: higher is a better run.</li>
       </ul>
     </details>
   </div>
@@ -750,6 +752,21 @@
     </div>
     <div class="tview" data-tview="combo" hidden>
       <div class="legend combo-legend"></div>
+      <div class="controls">
+        <div class="control">
+          <label for="combo-start-atk">From gameweek</label>
+          <select id="combo-start-atk"></select>
+        </div>
+        <div class="control">
+          <label for="combo-span-atk">Gameweeks shown</label>
+          <select id="combo-span-atk">
+            <option value="3">3</option>
+            <option value="5" selected>5</option>
+            <option value="8">8</option>
+            <option value="10">10</option>
+          </select>
+        </div>
+      </div>
       <div class="table-wrap">
         <table class="ticker-table combo-table grid-table" id="combo-tbl-atk">
           <thead><tr id="combo-head-atk"></tr></thead>
@@ -798,6 +815,21 @@
     </div>
     <div class="tview" data-tview="combo" hidden>
       <div class="legend combo-legend"></div>
+      <div class="controls">
+        <div class="control">
+          <label for="combo-start-def">From gameweek</label>
+          <select id="combo-start-def"></select>
+        </div>
+        <div class="control">
+          <label for="combo-span-def">Gameweeks shown</label>
+          <select id="combo-span-def">
+            <option value="3">3</option>
+            <option value="5" selected>5</option>
+            <option value="8">8</option>
+            <option value="10">10</option>
+          </select>
+        </div>
+      </div>
       <div class="table-wrap">
         <table class="ticker-table combo-table grid-table" id="combo-tbl-def">
           <thead><tr id="combo-head-def"></tr></thead>
@@ -1523,22 +1555,28 @@
 
   })();
 
-  // --- Combo view of the tickers: every team x every gameweek up to GW19,
-  // scored like Next GW. Sum adds a team's combos: higher is a better run.
+  // --- Combo view of the tickers: every team's combos, scored like Next GW,
+  // over the gameweeks picked (same controls as the opponent-only ticker).
+  // Sum adds a team's combos: higher is a better run.
   function setupComboGrid(mode) {
     const headEl = document.getElementById(`combo-head-${mode}`);
     const bodyEl = document.getElementById(`combo-tbody-${mode}`);
-    const cells = Object.fromEntries(ALL_SHORTS.map(s => [s, Object.fromEntries(PLAN_GWS.map(g => [
+    const ctlStart = document.getElementById(`combo-start-${mode}`);
+    const ctlSpan = document.getElementById(`combo-span-${mode}`);
+    ctlStart.innerHTML = ALL_GWS.map(g => `<option value="${g}">GW ${g}</option>`).join("");
+    const cells = Object.fromEntries(ALL_SHORTS.map(s => [s, Object.fromEntries(ALL_GWS.map(g => [
       g, FIXTURES_BY_TEAM[s].filter(f => f.gw === g).map(f => combo(mode, s, f)),
     ]))]));
-    const sums = Object.fromEntries(ALL_SHORTS.map(s => [s, PLAN_GWS.reduce((acc, g) => acc + sumScores(cells[s][g]), 0)]));
-    const cols = [
-      { key: "team", label: "Team", left: true },
-      { key: "sum", label: "Sum", title: "Combo scores added up over these gameweeks: higher is a better run" },
-      ...PLAN_GWS.map(g => ({ label: `GW ${g}${gwBadges(g)}` })),
-    ];
     const state = { key: "sum", dir: "descending" };
     function render() {
+      const start = Number(ctlStart.value);
+      const gws = ALL_GWS.filter(g => g >= start).slice(0, Number(ctlSpan.value));
+      const sums = Object.fromEntries(ALL_SHORTS.map(s => [s, gws.reduce((acc, g) => acc + sumScores(cells[s][g]), 0)]));
+      const cols = [
+        { key: "team", label: "Team", left: true },
+        { key: "sum", label: "Sum", title: "Combo scores added up over these gameweeks: higher is a better run" },
+        ...gws.map(g => ({ label: `GW ${g}${gwBadges(g)}` })),
+      ];
       renderHead(headEl, cols, state);
       const sorted = [...ALL_SHORTS].sort((a, b) => {
         const cmp = state.key === "team" ? byTeamName(a, b) : sums[a] - sums[b];
@@ -1546,9 +1584,10 @@
       });
       bodyEl.innerHTML = sorted.map(s =>
         `<tr><td class="team-col"><span class="name-full">${TEAM_SHORT_TO_FULL[s]}</span><span class="name-short">${s}</span></td><td class="total-col">${sums[s]}</td>` +
-        PLAN_GWS.map(g => comboCell(cells[s][g], true)).join("") + `</tr>`
+        gws.map(g => comboCell(cells[s][g], true)).join("") + `</tr>`
       ).join("");
     }
+    [ctlStart, ctlSpan].forEach(el => el.addEventListener("change", render));
     wireSort(headEl, state, { team: "ascending" }, render);
     wireInfo(`combo-tbl-${mode}`);
     render();
