@@ -1,7 +1,7 @@
-"""Turns raw Understat + FPL data into the league table and home/away split.
+"""Turns team match history (team_xg) into the league table and home/away split.
 
-Both are plain aggregations over Understat's team-level match history --
-no network calls, unit-testable against small hand-built fixtures.
+Both are plain aggregations over each team's per-match rows -- no network
+calls, unit-testable against small hand-built fixtures.
 
 Per-match (rate) figures are computed alongside the season totals: once
 blank/double gameweeks start happening, teams stop having played the same
@@ -11,9 +11,6 @@ fixture ticker bands on the per-match rate for exactly this reason.
 """
 from __future__ import annotations
 
-from .team_map import UNDERSTAT_TO_FPL
-
-
 def _fpl_name_lookup(bootstrap: dict) -> dict[str, str]:
     return {t["short_name"]: t["name"] for t in bootstrap["teams"]}
 
@@ -22,18 +19,15 @@ def _per_match(total: float, played: int) -> float:
     return round(total / played, 2) if played else 0.0
 
 
-def compute_league_table(understat_data: dict, bootstrap: dict) -> list[dict]:
+def compute_league_table(team_matches: dict[str, list[dict]], bootstrap: dict) -> list[dict]:
     """One row per team: goals, points, and season-to-date xG/xGC (plus
-    per-match rates), derived entirely from Understat's per-match team
-    history (already cross-checked against FPL's own fixture results
-    during design -- see the design spec's appendix)."""
+    per-match rates), from team_xg.build_team_matches."""
     name_by_short = _fpl_name_lookup(bootstrap)
     rows = []
-    for team in understat_data["teams"].values():
-        short = UNDERSTAT_TO_FPL[team["title"]]
+    for short, history in team_matches.items():
         played = gf = ga = pts = 0
         xg = xgc = 0.0
-        for h in team["history"]:
+        for h in history:
             played += 1
             gf += h["scored"]
             ga += h["missed"]
@@ -61,16 +55,15 @@ def compute_league_table(understat_data: dict, bootstrap: dict) -> list[dict]:
     return rows
 
 
-def compute_home_away_split(understat_data: dict, bootstrap: dict) -> list[dict]:
+def compute_home_away_split(team_matches: dict[str, list[dict]], bootstrap: dict) -> list[dict]:
     """Per-team xG/xGC, separated by venue (plus per-match rates) -- a
     team's home form can look nothing like its away form."""
     name_by_short = _fpl_name_lookup(bootstrap)
     rows = []
-    for team in understat_data["teams"].values():
-        short = UNDERSTAT_TO_FPL[team["title"]]
+    for short, history in team_matches.items():
         home_xg = home_xgc = away_xg = away_xgc = 0.0
         home_games = away_games = 0
-        for h in team["history"]:
+        for h in history:
             if h["h_a"] == "h":
                 home_games += 1
                 home_xg += h["xG"]

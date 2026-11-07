@@ -1,0 +1,71 @@
+name: Preview build
+
+# Builds the dashboard from live data on any branch other than master and
+# deploys it as a Vercel preview (never production), so data-source or
+# template changes can be checked first. The preview URL is in the run's
+# summary; the page is also attached as the "dashboard" artifact.
+on:
+  push:
+    branches-ignore: [master]
+  workflow_dispatch:
+    inputs:
+      xg_source:
+        description: "xG source to build with"
+        type: choice
+        options: [repository variable, fpl, understat]
+        default: repository variable
+
+env:
+  # The chosen input on a manual run, otherwise the XG_SOURCE repository
+  # variable (unset means fpl, see fpl_predictor/config.py).
+  XG_SOURCE: ${{ (inputs.xg_source == 'fpl' || inputs.xg_source == 'understat') && inputs.xg_source || vars.XG_SOURCE }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Build dashboard from live data
+        run: python -m fpl_predictor refresh
+
+      - name: Print the league table
+        run: |
+          python - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          from fpl_predictor import analysis, cli, fpl_client
+          bootstrap = fpl_client.fetch_bootstrap()
+          fixtures = fpl_client.fetch_fixtures()
+          table = analysis.compute_league_table(cli._team_matches(bootstrap, fixtures, False), bootstrap)
+          cols = ["short", "played", "GF", "GA", "Pts", "xG", "xGC", "xGPerMatch", "xGCPerMatch"]
+          print("| " + " | ".join(cols) + " |")
+          print("|" + "---|" * len(cols))
+          for r in table:
+              print("| " + " | ".join(str(r[c]) for c in cols) + " |")
+          PY
+
+      - name: Check for a newly finished gameweek
+        run: python -m fpl_predictor check
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: dashboard
+          path: output/dashboard.html
+
+      # A Vercel *preview* deployment: its own URL, the production site is
+      # untouched.
+      - name: Deploy preview
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          mkdir -p site
+          cp output/dashboard.html site/index.html
+          url=$(npx --yes vercel@latest deploy site --yes --token "${{ secrets.VERCEL_TOKEN }}")
+          echo "Preview: $url" | tee -a "$GITHUB_STEP_SUMMARY"
