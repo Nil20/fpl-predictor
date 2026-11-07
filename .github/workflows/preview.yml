@@ -8,9 +8,15 @@ on:
   push:
     branches-ignore: [master]
   workflow_dispatch:
+    inputs:
+      xg_source:
+        description: "xG source to build with (blank = the XG_SOURCE repository variable)"
+        type: choice
+        options: ["", fpl, understat]
+        default: ""
 
 env:
-  XG_SOURCE: ${{ vars.XG_SOURCE }}
+  XG_SOURCE: ${{ inputs.xg_source || vars.XG_SOURCE }}
 
 jobs:
   build:
