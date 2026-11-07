@@ -670,7 +670,7 @@
   <div class="panel" id="panel-next" data-panel="next" role="tabpanel" aria-labelledby="tab-next" hidden>
   <section class="block">
     <div class="section-head">
-      <h2>Next Gameweek <span id="next-gw-label"></span></h2>
+      <h2><span id="next-title">Next Gameweek</span> <span id="next-gw-label"></span></h2>
       <p class="section-note">
         Each team's colour vs its opponent's, both at that venue.
         <strong>Green vs green</strong> is the best combo (10),
@@ -685,6 +685,12 @@
         <li>All home/away rates, ranked against the other 19 teams into the ticker's 5 colours. Green is worth 5, red 1; a combo adds both sides.</li>
       </ul>
     </details>
+    <div class="controls">
+      <div class="control">
+        <label for="next-gw-pick">Gameweek</label>
+        <select id="next-gw-pick"></select>
+      </div>
+    </div>
     <div class="legend combo-legend"></div>
     <div class="table-wrap">
       <table class="ticker-table combo-table" id="next-tbl">
@@ -1207,22 +1213,34 @@
   }
   const byTeamName = (a, b) => TEAM_SHORT_TO_FULL[a].localeCompare(TEAM_SHORT_TO_FULL[b]);
   const NEXT_GW = ALL_GWS[0];
+  // Next GW's picker and the Chip Planner cover gameweeks up to GW19
+  // (first-half chips), or to the end of the season once past it.
+  const PLAN_GWS = NEXT_GW === undefined ? [] : ALL_GWS.filter(g => g <= (NEXT_GW <= 19 ? 19 : 38));
 
-  // --- Next gameweek: the ticker's first column, scored as combos.
+  // --- Next gameweek (or any up to GW19, via the picker): one ticker
+  // column, scored as combos.
   (function setupNext() {
     const headEl = document.getElementById("next-head");
     const bodyEl = document.getElementById("next-tbody");
+    const pick = document.getElementById("next-gw-pick");
     if (NEXT_GW === undefined) {
       bodyEl.innerHTML = `<tr><td>No fixtures left this season.</td></tr>`;
       return;
     }
-    document.getElementById("next-gw-label").textContent = `· GW ${NEXT_GW}`;
-    const rows = ALL_SHORTS.map(short => {
-      const fx = FIXTURES_BY_TEAM[short].filter(f => f.gw === NEXT_GW);
-      const atk = fx.map(f => combo("atk", short, f));
-      const def = fx.map(f => combo("def", short, f));
-      return { short, fx, atk, def, atkScore: sumScores(atk), defScore: sumScores(def) };
-    });
+    pick.innerHTML = PLAN_GWS.map(g => `<option value="${g}">GW ${g}${g === NEXT_GW ? " (next)" : ""}</option>`).join("");
+    let rows = [];
+    function load() {
+      const gw = Number(pick.value);
+      document.getElementById("next-title").textContent = gw === NEXT_GW ? "Next Gameweek" : "Gameweek";
+      document.getElementById("next-gw-label").textContent = `· GW ${gw}`;
+      document.getElementById("next-info").textContent = "Tap a combo for its breakdown.";
+      rows = ALL_SHORTS.map(short => {
+        const fx = FIXTURES_BY_TEAM[short].filter(f => f.gw === gw);
+        const atk = fx.map(f => combo("atk", short, f));
+        const def = fx.map(f => combo("def", short, f));
+        return { short, fx, atk, def, atkScore: sumScores(atk), defScore: sumScores(def) };
+      });
+    }
     const cols = [
       { key: "team", label: "Team", left: true },
       { key: "atk", label: "Attack", title: "Team xG/M vs opponent xGC/M at that venue. 10 = green vs green" },
@@ -1243,15 +1261,15 @@
     }
     wireSort(headEl, state, { team: "ascending" }, render);
     wireInfo("next-tbl", "next-info");
+    pick.addEventListener("change", () => { load(); render(); });
+    load();
     render();
   })();
 
-  // --- Chip planner: gameweeks up to GW19 (first-half chips), or to the
-  // end of the season once past it.
+  // --- Chip planner over PLAN_GWS.
   (function setupChips() {
     if (NEXT_GW === undefined) return;
-    const lastGw = NEXT_GW <= 19 ? 19 : 38;
-    const gws = ALL_GWS.filter(g => g <= lastGw);
+    const gws = PLAN_GWS;
     document.getElementById("chips-range-label").textContent =
       gws.length > 1 ? `· GW ${gws[0]}–${gws[gws.length - 1]}` : `· GW ${gws[0]}`;
 
