@@ -1,8 +1,9 @@
 name: Preview build
 
-# Builds the dashboard from live data on any branch other than master,
-# without deploying, so data-source or template changes can be checked
-# first. The page is attached to the run as the "dashboard" artifact.
+# Builds the dashboard from live data on any branch other than master and
+# deploys it as a Vercel preview (never production), so data-source or
+# template changes can be checked first. The preview URL is in the run's
+# summary; the page is also attached as the "dashboard" artifact.
 on:
   push:
     branches-ignore: [master]
@@ -48,3 +49,15 @@ jobs:
         with:
           name: dashboard
           path: output/dashboard.html
+
+      # A Vercel *preview* deployment: its own URL, the production site is
+      # untouched.
+      - name: Deploy preview
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          mkdir -p site
+          cp output/dashboard.html site/index.html
+          url=$(npx --yes vercel@latest deploy site --yes --token "${{ secrets.VERCEL_TOKEN }}")
+          echo "Preview: $url" | tee -a "$GITHUB_STEP_SUMMARY"
