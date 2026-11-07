@@ -515,7 +515,16 @@
     font-size: 0.86rem;
   }
   .pick .fixture { font-weight: 500; }
-  .pick .fixture b { font-weight: 700; }
+  /* the picked team as an inverted label, the opponent dimmed: weight
+     alone barely shows in this mono font */
+  .pick .fixture b {
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--paper-raised);
+    color: var(--ink);
+  }
+  .pick .fixture .opp { opacity: 0.7; }
   .pick .v { font-size: 0.7rem; opacity: 0.8; }
   .pick .pick-score {
     margin-left: 3px;
@@ -1444,8 +1453,8 @@
         const score = r[mode + "Score"];
         // Written as the fixture reads, home team first, the picked team in bold.
         const fixtures = combos.map(c => c.venue === "H"
-          ? `<b>${r.short}</b> <span class="v">v</span> ${c.opp}`
-          : `${c.opp} <span class="v">v</span> <b>${r.short}</b>`
+          ? `<b>${r.short}</b> <span class="v">v</span> <span class="opp">${c.opp}</span>`
+          : `<span class="opp">${c.opp}</span> <span class="v">v</span> <b>${r.short}</b>`
         ).join(` <span class="v">+</span> `);
         const info = esc(combos.map(c => c.info).join("\n"));
         return `<span class="pick ${scoreTier(Math.round(score / combos.length))}" tabindex="0" title="${info}" data-info="${info}">` +
