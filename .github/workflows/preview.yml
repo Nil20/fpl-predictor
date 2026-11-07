@@ -10,13 +10,15 @@ on:
   workflow_dispatch:
     inputs:
       xg_source:
-        description: "xG source to build with (blank = the XG_SOURCE repository variable)"
+        description: "xG source to build with"
         type: choice
-        options: ["", fpl, understat]
-        default: ""
+        options: [repository variable, fpl, understat]
+        default: repository variable
 
 env:
-  XG_SOURCE: ${{ inputs.xg_source || vars.XG_SOURCE }}
+  # The chosen input on a manual run, otherwise the XG_SOURCE repository
+  # variable (unset means fpl, see fpl_predictor/config.py).
+  XG_SOURCE: ${{ (inputs.xg_source == 'fpl' || inputs.xg_source == 'understat') && inputs.xg_source || vars.XG_SOURCE }}
 
 jobs:
   build:
